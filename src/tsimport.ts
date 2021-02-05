@@ -1,9 +1,8 @@
 import { ParseFileMode, parseFile } from "~/parseFile";
-import { findCommonRoot, findPackageDotJsonDir, loadConfig, usage, verbose } from "~/utils";
+import { findCommonRoot, findPackageDotJsonDir, gather, loadConfig, usage, verbose } from "~/utils";
 import Export from "~/Export";
 import Options from "~/Options";
 import assert from "assert";
-import fs from "fs";
 import minimist from "minimist";
 import path from "path";
 
@@ -86,36 +85,8 @@ function processFiles() {
     });
 }
 
-function gather(dir: string): void {
-    let found = false;
-    fs.readdirSync(dir, { withFileTypes: true }).forEach((f) => {
-        if (f.isFile()) {
-            if (f.name.substr(-3) === ".ts" && f.name.substr(-5) !== ".d.ts") {
-                const file = path.resolve(path.join(dir, f.name));
-                if (file !== srcFile) {
-                    files.push(file);
-                    found = true;
-                    // parseFile(file, false);
-                }
-            }
-        } else if (
-            f.isDirectory() &&
-            f.name !== "node_modules" &&
-            f.name !== "tests" &&
-            f.name !== "examples" &&
-            f.name !== "__tests__"
-        ) {
-            gather(path.join(dir, f.name));
-        }
-        // console.log(f.name, f.isDirectory());
-    });
-    if (found) {
-        dirs.push(dir);
-    }
-}
-
 assert(options["src-root"]);
-gather(options["src-root"]);
+gather(options["src-root"], srcFile, dirs, files);
 
 if (!options.explicitSrcRoot) {
     options["src-root"] = findCommonRoot(dirs);

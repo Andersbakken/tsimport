@@ -116,15 +116,15 @@ export function forwardSymbol(idx: number, src: string): number {
     return idx;
 }
 
-function findSharedRoot(a: string, b: string): number {
-    let ret = 0;
-    while (ret < a.length && ret < b.length && a[ret] === b[ret]) {
-        ++ret;
-    }
-    return ret;
-}
-
 export function findCommonRoot(strings: string[]): string {
+    const findSharedRoot = (a: string, b: string) => {
+        let ret = 0;
+        while (ret < a.length && ret < b.length && a[ret] === b[ret]) {
+            ++ret;
+        }
+        return ret;
+    };
+
     assert(strings.length > 0);
     if (strings.length === 1) {
         return strings[0];
@@ -168,5 +168,33 @@ export function loadConfig(options: Options, root: string): Options {
 export function verbose(...args: unknown[]): void {
     if (v) {
         console.error(...args);
+    }
+}
+
+export function gather(dir: string, srcFile: string, dirs: string[], files: string[]): void {
+    let found = false;
+    fs.readdirSync(dir, { withFileTypes: true }).forEach((f) => {
+        if (f.isFile()) {
+            if (f.name.substr(-3) === ".ts" && f.name.substr(-5) !== ".d.ts") {
+                const file = path.resolve(path.join(dir, f.name));
+                if (file !== srcFile) {
+                    files.push(file);
+                    found = true;
+                    // parseFile(file, false);
+                }
+            }
+        } else if (
+            f.isDirectory() &&
+            f.name !== "node_modules" &&
+            f.name !== "tests" &&
+            f.name !== "examples" &&
+            f.name !== "__tests__"
+        ) {
+            gather(path.join(dir, f.name), srcFile, dirs, files);
+        }
+        // console.log(f.name, f.isDirectory());
+    });
+    if (found) {
+        dirs.push(dir);
     }
 }
