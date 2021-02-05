@@ -1,16 +1,17 @@
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "rollup-plugin-typescript2";
-
+import resolve from "@rollup/plugin-node-resolve";
 
 const plugins = [
-    // resolve({
-    //     preferBuiltins: false
-    // }),
+    resolve({
+        preferBuiltins: false
+    }),
     commonjs(),
     typescript({
         tsconfig: `tsconfig.json`,
-        cacheRoot: ".cache"
-    }),
+        cacheRoot: ".cache",
+        include: ["src/*"]
+    })
     // babel({
     //     exclude: "node_modules/**",
     //     babelrc: false,
@@ -48,7 +49,7 @@ export default [
     {
         input: "src/index.ts",
         output: {
-            file: "tsimport.js",
+            file: "dist/tsimport.js",
             format: "iife",
             name: "tsimport",
             exports: "named",

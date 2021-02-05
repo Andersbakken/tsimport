@@ -1,27 +1,26 @@
 {
-  "exclude": [],
-  "compilerOptions": {
-    "target": "esnext",
-    "newLine": "LF",
-    "module": "es6",
-    "declaration": true,
-    "moduleResolution": "node",
-    "pretty": true,
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "downlevelIteration": true,
-    "strict": true,
-    "sourceMap": true,
-    "incremental": true,
-    "lib": ["es6"],
-    "baseUrl": ".",
-    "esModuleInterop": true,
-
-    "paths": {
-      "~/*": ["src/*"]
+    "compilerOptions": {
+        "target": "esnext",
+        "newLine": "LF",
+        "module": "es6",
+        "moduleResolution": "node",
+        "rootDir": "src",
+        "pretty": true,
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "downlevelIteration": true,
+        "strict": true,
+        "sourceMap": true,
+        "incremental": true,
+        "lib": ["es6"],
+        "baseUrl": "src",
+        "esModuleInterop": true,
+        "declaration": false,
+        "include": ["src/*"],
+        "paths": {
+            "~/*": ["src/*"]
+        }
     }
-  }
 }
-

@@ -33,17 +33,17 @@ if (!srcRoot) {
     }
 }
 
-const allExports = new Map<string, Export[]>();
+const allExports = new Map();
 
-function addExport(name: string, def: boolean, file: string) {
-    const cur = allExports.get(name);
-    const exp = new Export(def, file);
-    if (!cur) {
-        allExports.set(name, [exp]);
-    } else {
-        cur.push(exp);
-    }
-}
+// function addExport(n: string, def: boolean, file: string): void {
+//     const cur = allExports.get(n);
+//     const exp = new Export(def, file);
+//     if (!cur) {
+//         allExports.set(n, [exp]);
+//     } else {
+//         cur.push(exp);
+//     }
+// }
 
 function parseFile(filePath: string, parseImports: boolean): File {
     const file = new File(filePath);
@@ -62,7 +62,7 @@ function parseFile(filePath: string, parseImports: boolean): File {
                     if (def) {
                         const based = path.basename(filePath);
                         file.defaultExport = based.substr(0, based.length - 3);
-                        addExport(file.defaultExport, true, file);
+                        // addExport(file.defaultExport, true, file);
                         idx = i + 8;
                         continue;
                     }
