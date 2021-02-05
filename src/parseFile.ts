@@ -21,7 +21,6 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
     } else {
         transformedPath = filePath;
     }
-    const file = new File(transformedPath);
     let src;
     try {
         src = fs.readFileSync(filePath, "utf8");
@@ -29,6 +28,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         verbose("Failed to read file", filePath, err);
         return undefined;
     }
+    const file = new File(transformedPath, src);
 
     if (options.tilde === undefined && src.indexOf(' from "~/') !== -1) {
         options.tilde = true;

@@ -6,8 +6,9 @@ import path from "path";
 type Printer = (...args: unknown[]) => void;
 
 export function usage(print: Printer): void {
-    print(`tsimport [/path/to/file] [symbol] [--src-root <root>] [--use-tilde] [--verbose]
-tsimport --complete [sym]`);
+    print(`Usage:
+tsimport [/path/to/file] [symbol] [--src-root <root>] [--use-tilde] [--verbose|-v] [--inplace|-i <backupsuffix>]
+tsimport [/path/to/file-or-directory] --complete [sym]`);
 }
 
 export function findPackageDotJsonDir(dir: string): string | undefined {
@@ -150,6 +151,9 @@ export function loadConfig(options: Options, root: string): Options {
         }
         if (options.verbose === undefined && typeof opts.verbose === "boolean") {
             options.verbose = opts.verbose;
+        }
+        if (options["in-place"] === undefined && typeof opts["in-place"] === "boolean") {
+            options["in-place"] = opts["in-place"];
         }
     } catch (err) {
         /* */

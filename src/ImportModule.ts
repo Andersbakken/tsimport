@@ -1,13 +1,13 @@
 export default class ImportModule {
     path: string;
-    from: number;
-    to: number;
+    start: number;
+    end: number;
     named: string[];
     default?: string;
-    constructor(filePath: string, from: number, to: number) {
+    constructor(filePath: string, start: number, end: number) {
         this.path = filePath;
-        this.from = from;
-        this.to = to;
+        this.start = start;
+        this.end = end;
         this.named = [];
     }
 }

@@ -1,13 +1,14 @@
 import { ParseFileMode, parseFile } from "~/parseFile";
 import { findCommonRoot, findPackageDotJsonDir, gather, loadConfig, usage, verbose } from "~/utils";
 import Export from "~/Export";
+import ImportModule from "~/ImportModule";
 import Options from "~/Options";
 import assert from "assert";
+import fs from "fs";
 import minimist from "minimist";
 import path from "path";
 
 const args = minimist(process.argv.slice(1));
-
 if (args.help) {
     usage(console.log.bind(console));
     process.exit(0);
@@ -46,7 +47,8 @@ const options: Options = loadConfig(
         tilde: args.tilde,
         "src-root": args["src-root"] || root,
         verbose: args.verbose || args.v,
-        explicitSrcRoot: typeof args["src-root"] === "string"
+        explicitSrcRoot: typeof args["src-root"] === "string",
+        "in-place": args["in-place"] || args.i
     },
     root
 );
@@ -159,7 +161,7 @@ if (!symbolExport) {
     process.exit(1);
 }
 
-let found: string | undefined;
+let found: Export | undefined;
 if (symbolExport.length > 1) {
     for (let idx = 0; idx < symbolExport.length; ++idx) {
         if (symbolExport[idx].default) {
@@ -167,7 +169,7 @@ if (symbolExport.length > 1) {
                 console.error(`Found multiple exports for ${symbol}\n${found} and ${symbolExport[idx].path}`);
                 process.exit(1);
             } else {
-                found = symbolExport[idx].path;
+                found = symbolExport[idx];
             }
         }
     }
@@ -185,8 +187,78 @@ if (symbolExport.length > 1) {
     }
 } else {
     assert(symbolExport.length === 1);
-    found = symbolExport[0].path;
+    found = symbolExport[0];
 }
 
 assert(found);
-console.log("Found", symbol, "at", found);
+const importPath = found.path.substr(0, found.path.length - 3);
+verbose("Found", symbol, "at", found);
+let insertPoint: number | undefined;
+let importModule: ImportModule | undefined;
+if (parsed.imports) {
+    for (let idx = 0; idx < parsed.imports.length; ++idx) {
+        verbose("comparing", parsed.imports[idx].path, importPath);
+        if (parsed.imports[idx].path === importPath) {
+            importModule = parsed.imports[idx];
+            insertPoint = undefined;
+            // console.error("Already have it", parsed.imports[idx]);
+            break;
+        }
+        insertPoint = parsed.sourceCode.indexOf("\n", parsed.imports[idx].end) + 1;
+    }
+} else {
+    insertPoint = 0;
+}
+
+let newSrc: string;
+if (importModule) {
+    if (found.default) {
+        // we already have named imports but not the default import,
+        // it needs to go before the {}
+        assert(!importModule.default);
+        assert(importModule.named.length);
+
+        const idx = parsed.sourceCode.indexOf("{", importModule.start);
+        newSrc = `${parsed.sourceCode.substr(0, idx)}${symbol}, ${parsed.sourceCode.substr(idx)}`;
+    } else if (importModule.named) {
+        // we already have named imports but not this one, rewrite
+        // sorted
+        const startBrace = parsed.sourceCode.indexOf("{", importModule.start);
+        const endBrace = parsed.sourceCode.indexOf("}", startBrace);
+        importModule.named.push(symbol);
+        importModule.named.sort();
+        newSrc = `${parsed.sourceCode.substr(0, startBrace)}{ ${importModule.named.join(
+            ", "
+        )} }${parsed.sourceCode.substr(endBrace + 1)}`;
+    } else {
+        // we already have a default import but no named one it needs
+        // to go after the default import
+        const idx = parsed.sourceCode.indexOf(" from ", importModule.start);
+        newSrc = `${parsed.sourceCode.substr(0, idx)}, { ${symbol} }${parsed.sourceCode.substr(idx)}`;
+    }
+} else if (found.default) {
+    assert(insertPoint !== undefined);
+    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${
+        found.path
+    }";\n${parsed.sourceCode.substr(insertPoint)}`;
+} else {
+    assert(insertPoint !== undefined);
+    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${
+        found.path
+    }";\n${parsed.sourceCode.substr(insertPoint)}`;
+}
+
+if (options["in-place"]) {
+    console.log(options["in-place"]);
+    try {
+        if (typeof options["in-place"] === "string") {
+            fs.writeFileSync(srcFile + options["in-place"], parsed.sourceCode);
+        }
+        fs.writeFileSync(srcFile, newSrc);
+    } catch (err) {
+        console.error("Failed to write changes", err.message);
+        process.exit(1);
+    }
+} else {
+    console.log(newSrc);
+}

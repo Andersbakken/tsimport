@@ -5,7 +5,9 @@ export default class File {
     imports?: ImportModule[];
     namedExports?: string[];
     defaultExport?: string;
-    constructor(filePath: string) {
+    sourceCode: string;
+    constructor(filePath: string, src: string) {
         this.path = filePath;
+        this.sourceCode = src;
     }
 }
