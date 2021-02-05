@@ -55,10 +55,10 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                         file.defaultExport = based.substr(0, based.length - 3);
                         assert(file.defaultExport, "Gotta have it");
                         idx = i + 8;
-                        continue;
                     }
                     let next;
                     let done = true;
+                    let namedDefault = false;
                     do {
                         done = true;
                         if (isSymbol(i, src)) {
@@ -91,26 +91,39 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                             case '"':
                             case "'":
                             case "new":
-                                console.error("This should have been defaulted", filePath, thing, i);
+                                if (!def) {
+                                    console.error("This should have been defaulted", filePath, thing, i);
+                                }
                                 idx = next;
                                 continue;
                             // process.exit(1);
-                            case "const":
                             case "enum":
-                            case "abstract":
-                            case "interface":
-                            case "class":
                             case "type":
                             case "function":
+                            case "interface":
+                            case "class":
+                                // for these cases we have a better idea of the desired name of the export so we let them override
+                                namedDefault = true;
+                            case "const":
+                            case "abstract":
+                            case "default":
                                 i = forwardSpaces(next, src);
                                 done = false;
                                 break;
                             default:
-                                if (!file.namedExports) {
-                                    file.namedExports = [];
+                                if (!def) {
+                                    if (!file.namedExports) {
+                                        file.namedExports = [];
+                                    }
+                                    file.namedExports.push(thing);
+                                } else if (namedDefault) {
+                                    if (file.defaultExport !== thing) {
+                                        verbose(
+                                            `Rewriting export name from "${file.defaultExport}" to "${thing}" for ${file.path}`
+                                        );
+                                    }
+                                    file.defaultExport = thing;
                                 }
-                                file.namedExports.push(thing);
-                                // console.error("don't know what", thing, filePath, i);
                                 break;
                         }
                     } while (!done);
