@@ -18,7 +18,6 @@
         "max-classes-per-file": ["error", 1],
         "no-caller": "error",
         "no-case-declarations": "error",
-        "no-console": "error",
         "no-constructor-return": "error",
         "no-else-return": ["error", { "allowElseIf": false }],
         "no-eq-null": "error",
@@ -62,6 +61,7 @@
 
         "@typescript-eslint/ban-ts-comment": "off",
         "@typescript-eslint/no-inferrable-types": "off",
-        "no-fallthrough": "off"
+        "no-fallthrough": "off",
+        "no-console": "off"
     }
 }

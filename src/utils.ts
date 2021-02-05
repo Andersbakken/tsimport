@@ -2,12 +2,12 @@ import path from "path";
 
 type Printer = (...args: unknown[]) => void;
 
-export function usage(print: Printer) {
+export function usage(print: Printer): void {
     print(`tsimport /path/to/file symbol [--src-root <root>]`);
 }
 
 export function findPackageDotJsonDir(dir: string): string | undefined {
-    while (dir != "/") {
+    while (dir !== "/") {
         if (path.join(dir, "package.json")) {
             return dir;
         }
@@ -16,7 +16,7 @@ export function findPackageDotJsonDir(dir: string): string | undefined {
     return undefined;
 }
 
-export function forwardSpaces(idx: number, src: string) {
+export function forwardSpaces(idx: number, src: string): number {
     while (idx < src.length) {
         switch (src.charCodeAt(idx)) {
             case 32:
@@ -31,7 +31,7 @@ export function forwardSpaces(idx: number, src: string) {
     return idx;
 }
 
-export function backwardSpaces(idx: number, src: string) {
+export function backwardSpaces(idx: number, src: string): number {
     while (idx > 0) {
         switch (src.charCodeAt(idx)) {
             case 32:
@@ -76,7 +76,7 @@ export function backwardNonSpaces(idx: number, src: string): number {
     return idx;
 }
 
-export function isSymbol(idx: number, src: string): number {
+export function isSymbol(idx: number, src: string): boolean {
     const code = src.charCodeAt(idx);
     return (
         (code >= 49 && code <= 57) ||

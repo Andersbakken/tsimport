@@ -1,10 +1,9 @@
 {
     "compilerOptions": {
-        "target": "esnext",
+        "target": "es6",
         "newLine": "LF",
         "module": "es6",
         "moduleResolution": "node",
-        "rootDir": "src",
         "pretty": true,
         "noImplicitAny": true,
         "esModuleInterop": true,
@@ -15,10 +14,7 @@
         "sourceMap": true,
         "incremental": true,
         "lib": ["es6"],
-        "baseUrl": "src",
-        "esModuleInterop": true,
-        "declaration": false,
-        "include": ["src/*"],
+        "baseUrl": ".",
         "paths": {
             "~/*": ["src/*"]
         }

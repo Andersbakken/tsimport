@@ -1,16 +1,8 @@
-import {
-    backwardNonSpaces,
-    backwardSpaces,
-    findPackageDotJsonDir,
-    forwardNonSpaces,
-    forwardSpaces,
-    forwardSymbol,
-    isSymbol,
-    usage
-} from "~/utils";
+import { findPackageDotJsonDir, forwardNonSpaces, forwardSpaces, forwardSymbol, isSymbol, usage } from "~/utils";
 import Export from "~/Export";
 import File from "~/File";
-import ImportModule from "~/ImportModule";
+import assert from "assert";
+// import ImportModule from "~/ImportModule";
 import fs from "fs";
 import minimist from "minimist";
 import path from "path";
@@ -35,15 +27,15 @@ if (!srcRoot) {
 
 const allExports = new Map();
 
-// function addExport(n: string, def: boolean, file: string): void {
-//     const cur = allExports.get(n);
-//     const exp = new Export(def, file);
-//     if (!cur) {
-//         allExports.set(n, [exp]);
-//     } else {
-//         cur.push(exp);
-//     }
-// }
+function addExport(n: string, def: boolean, file: string): void {
+    const cur = allExports.get(n);
+    const exp = new Export(def, file);
+    if (!cur) {
+        allExports.set(n, [exp]);
+    } else {
+        cur.push(exp);
+    }
+}
 
 function parseFile(filePath: string, parseImports: boolean): File {
     const file = new File(filePath);
@@ -62,7 +54,8 @@ function parseFile(filePath: string, parseImports: boolean): File {
                     if (def) {
                         const based = path.basename(filePath);
                         file.defaultExport = based.substr(0, based.length - 3);
-                        // addExport(file.defaultExport, true, file);
+                        assert(file.defaultExport, "Gotta have it");
+                        addExport(file.defaultExport, true, file.path);
                         idx = i + 8;
                         continue;
                     }
@@ -87,6 +80,7 @@ function parseFile(filePath: string, parseImports: boolean): File {
                                     src.substring(i + 1, endBrace)
                                         .split(/, */)
                                         .forEach((x) => {
+                                            assert(file.namedExports);
                                             file.namedExports.push(x.trim());
                                         });
                                     // console.log("Got some exports", exports);
@@ -150,7 +144,7 @@ function parseFile(filePath: string, parseImports: boolean): File {
                     }
 
                     // import
-                    let imports = src.substring(idx + 7, from).trim();
+                    const imports = src.substring(idx + 7, from).trim();
                     let def = true;
                     if (imports[0] === "{") {
                         def = false;
@@ -158,10 +152,11 @@ function parseFile(filePath: string, parseImports: boolean): File {
                             idx = quoteEnd;
                             continue;
                         }
-                        imports = imports
+                        const importArray = imports
                             .substring(1, imports.length - 2)
                             .split(",")
                             .map((x) => x.trim());
+                        console.log(importArray);
                     }
                     console.log(
                         `got ${def ? "default import" : "imports"} ${typeof imports} [${imports}] from [${file}]`
@@ -200,6 +195,7 @@ function parseFile(filePath: string, parseImports: boolean): File {
     }
     // console.log(file)
     if (file.defaultExport) {
+        /* */
     }
     return file;
 }
@@ -217,4 +213,5 @@ function processDir(dir: string): void {
 }
 
 const parsed = parseFile(srcFile, true);
+console.log(parsed);
 processDir(srcRoot);
