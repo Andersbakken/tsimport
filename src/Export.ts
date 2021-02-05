@@ -1,8 +1,8 @@
 export default class Export {
     readonly default: boolean;
-    readonly filePath: string;
-    constructor(def: boolean, filePath: string) {
+    readonly path: string;
+    constructor(def: boolean, path: string) {
         this.default = def;
-        this.filePath = filePath;
+        this.path = path;
     }
 }
