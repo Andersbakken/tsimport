@@ -6,7 +6,8 @@ import path from "path";
 type Printer = (...args: unknown[]) => void;
 
 export function usage(print: Printer): void {
-    print(`tsimport /path/to/file symbol [--src-root <root>]`);
+    print(`tsimport [/path/to/file] [symbol] [--src-root <root>] [--use-tilde] [--verbose]
+tsimport --complete [sym]`);
 }
 
 export function findPackageDotJsonDir(dir: string): string | undefined {
@@ -123,17 +124,17 @@ function findSharedRoot(a: string, b: string): number {
     return ret;
 }
 
-export function findCommonRoot(dirs: string[]): string {
-    assert(dirs.length > 0);
-    if (dirs.length === 1) {
-        return dirs[0];
+export function findCommonRoot(strings: string[]): string {
+    assert(strings.length > 0);
+    if (strings.length === 1) {
+        return strings[0];
     }
-    let shared = dirs[0].length;
-    for (let idx = 1; idx < dirs.length; ++idx) {
-        shared = Math.min(shared, findSharedRoot(dirs[0], dirs[idx]));
+    let shared = strings[0].length;
+    for (let idx = 1; idx < strings.length; ++idx) {
+        shared = Math.min(shared, findSharedRoot(strings[0], strings[idx]));
     }
-    console.log("Got root", dirs[0].substr(0, shared), dirs);
-    return dirs[0].substr(0, shared);
+    // console.log("Got root", strings[0].substr(0, shared), strings);
+    return strings[0].substr(0, shared);
 }
 
 let v = false;
@@ -145,6 +146,7 @@ export function loadConfig(options: Options, root: string): Options {
         }
         if (options["src-root"] === undefined && typeof opts["src-root"] === "string") {
             options["src-root"] = opts["src-root"];
+            options.explicitSrcRoot = true;
         }
         if (options.verbose === undefined && typeof opts.verbose === "boolean") {
             options.verbose = opts.verbose;

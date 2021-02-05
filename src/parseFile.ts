@@ -30,6 +30,10 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         return undefined;
     }
 
+    if (options.tilde === undefined && src.indexOf(' from "~/') !== -1) {
+        options.tilde = true;
+    }
+
     let commentStart = undefined;
     let idx = 0;
     verbose(`parsing file ${filePath} ${mode === ParseFileMode.Imports ? "imports" : "exports"}`);

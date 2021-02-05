@@ -9,16 +9,35 @@ import path from "path";
 
 const args = minimist(process.argv.slice(1));
 
-if (args._.length !== 3) {
+if (args.help) {
+    usage(console.log.bind(console));
+    process.exit(0);
+}
+
+if (args.complete === true) {
+    args.complete = "";
+} else if (args.complete !== undefined && typeof args.complete !== "string") {
     usage(console.error.bind(console));
+    console.error(`--complete takes an optional string`);
     process.exit(1);
 }
 
+let symbol: string | undefined;
+if (args._.length === 1) {
+    console.error("Nothing to do");
+    process.exit(1);
+} else if (args._.length === 2) {
+    if (args.complete === undefined) {
+        console.error("Nothing to do");
+        usage(console.error.bind(console));
+        process.exit(1);
+    }
+} else {
+    symbol = args._[2];
+}
 const srcFile = path.resolve(args._[1]);
-const symbol = args._[2];
 
-const explicitSrcRoot = true;
-const root = findPackageDotJsonDir(srcFile ? path.dirname(srcFile) : process.cwd());
+const root = findPackageDotJsonDir(path.dirname(srcFile));
 if (!root) {
     console.error("Can't find root");
     process.exit(1);
@@ -27,11 +46,14 @@ const options: Options = loadConfig(
     {
         tilde: args.tilde,
         "src-root": args["src-root"] || root,
-        verbose: args.verbose
+        verbose: args.verbose || args.v,
+        explicitSrcRoot: typeof args["src-root"] === "string"
     },
     root
 );
 
+const files: string[] = [];
+const dirs: string[] = [];
 const allExports = new Map<string, Export[]>();
 
 function addExport(name: string, def: boolean, file: string): void {
@@ -45,8 +67,24 @@ function addExport(name: string, def: boolean, file: string): void {
     }
 }
 
-const files: string[] = [];
-const dirs: string[] = [];
+function processFiles() {
+    // console.log(parsed);
+    files.forEach((f: string) => {
+        const p = parseFile(f, ParseFileMode.Exports, options);
+        if (p) {
+            // console.log(file)
+            if (p.defaultExport) {
+                addExport(p.defaultExport, true, p.path);
+            }
+
+            if (p.namedExports) {
+                p.namedExports.forEach((exp) => {
+                    addExport(exp, false, p.path);
+                });
+            }
+        }
+    });
+}
 
 function gather(dir: string): void {
     let found = false;
@@ -60,7 +98,13 @@ function gather(dir: string): void {
                     // parseFile(file, false);
                 }
             }
-        } else if (f.isDirectory() && f.name !== "node_modules") {
+        } else if (
+            f.isDirectory() &&
+            f.name !== "node_modules" &&
+            f.name !== "tests" &&
+            f.name !== "examples" &&
+            f.name !== "__tests__"
+        ) {
             gather(path.join(dir, f.name));
         }
         // console.log(f.name, f.isDirectory());
@@ -69,17 +113,55 @@ function gather(dir: string): void {
         dirs.push(dir);
     }
 }
+
 assert(options["src-root"]);
 gather(options["src-root"]);
 
-if (!explicitSrcRoot) {
+if (!options.explicitSrcRoot) {
     options["src-root"] = findCommonRoot(dirs);
     verbose("Got common root", options["src-root"]);
+}
+
+if (args.complete !== undefined) {
+    processFiles();
+    if (!args.complete) {
+        console.log(Array.from(allExports.keys()).sort().join("\n"));
+        process.exit(0);
+    }
+
+    const keys = Array.from(allExports.keys())
+        .filter((s) => {
+            return s.lastIndexOf(args.complete, 0) === 0;
+        })
+        .sort();
+    if (!keys.length) {
+        console.error(`Can't find completion for "${args.complete}"`);
+        process.exit(1);
+    }
+
+    if (keys.length === 1) {
+        if (keys[0] !== args.complete) {
+            console.log(keys[0]);
+        }
+
+        process.exit(0);
+    }
+
+    const commonRoot = findCommonRoot(keys);
+    if (commonRoot !== args.complete) {
+        console.log(commonRoot);
+        process.exit(0);
+    }
+
+    console.log(keys.join("\n"));
+    process.exit(0);
 }
 
 // console.log("got files", files);
 // console.log("got dirs", dirs);
 
+assert(srcFile);
+assert(symbol);
 const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
 if (!parsed) {
     console.error("Can't parse", srcFile);
@@ -98,22 +180,8 @@ if (parsed.imports) {
         }
     }
 }
-// console.log(parsed);
-files.forEach((f: string) => {
-    const p = parseFile(f, ParseFileMode.Exports, options);
-    if (p) {
-        // console.log(file)
-        if (p.defaultExport) {
-            addExport(p.defaultExport, true, p.path);
-        }
 
-        if (p.namedExports) {
-            p.namedExports.forEach((exp) => {
-                addExport(exp, false, p.path);
-            });
-        }
-    }
-});
+processFiles();
 const symbolExport = allExports.get(symbol);
 if (!symbolExport) {
     console.error(`Can't find symbol ${symbol}`);
