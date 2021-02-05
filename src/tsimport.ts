@@ -95,14 +95,32 @@ if (!options.explicitSrcRoot) {
     verbose("Got common root", options["src-root"]);
 }
 
+const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
 if (args.complete !== undefined) {
     processFiles();
+    let keys = Array.from(allExports.keys());
+    if (parsed && parsed.imports) {
+        const alreadyHave = new Set();
+        for (let idx = 0; idx < parsed.imports.length; ++idx) {
+            if (parsed.imports[idx].default) {
+                alreadyHave.add(parsed.imports[idx].default);
+            }
+            if (parsed.imports[idx].named) {
+                parsed.imports[idx].named.forEach((n) => {
+                    alreadyHave.add(n);
+                });
+            }
+        }
+        keys = keys.filter((k) => {
+            return !alreadyHave.has(k);
+        });
+    }
     if (!args.complete) {
-        console.log(Array.from(allExports.keys()).sort().join("\n"));
+        console.log(keys.sort().join("\n"));
         process.exit(0);
     }
 
-    const keys = Array.from(allExports.keys())
+    keys = keys
         .filter((s) => {
             return s.lastIndexOf(args.complete, 0) === 0;
         })
@@ -133,13 +151,12 @@ if (args.complete !== undefined) {
 // console.log("got files", files);
 // console.log("got dirs", dirs);
 
-assert(srcFile);
-assert(symbol);
-const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
 if (!parsed) {
     console.error("Can't parse", srcFile);
     process.exit(1);
 }
+
+assert(symbol);
 if (parsed.imports) {
     for (let idx = 0; idx < parsed.imports.length; ++idx) {
         if (parsed.imports[idx].default && parsed.imports[idx].default === symbol) {
@@ -238,14 +255,14 @@ if (importModule) {
     }
 } else if (found.default) {
     assert(insertPoint !== undefined);
-    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${
-        found.path
-    }";\n${parsed.sourceCode.substr(insertPoint)}`;
+    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${found.path}";\n${
+        insertPoint === 0 ? "\n" : ""
+    }${parsed.sourceCode.substr(insertPoint)}`;
 } else {
     assert(insertPoint !== undefined);
-    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${
-        found.path
-    }";\n${parsed.sourceCode.substr(insertPoint)}`;
+    newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${found.path}";\n${
+        insertPoint === 0 ? "\n" : ""
+    }${parsed.sourceCode.substr(insertPoint)}`;
 }
 
 if (options["in-place"]) {
