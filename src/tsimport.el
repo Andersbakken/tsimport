@@ -1,7 +1,6 @@
 (require 'thingatpt)
 
-(defvar tsimport-command "node /home/abakken/dev/tsimport/dist/tsimport.js")
-(defvar tsimport-backup-suffix nil)
+(defvar tsimport-command "tsimport")
 (defun tsimport (&optional symbol)
   (interactive)
   (unless symbol
@@ -14,13 +13,16 @@
         (unless default
           (error "No default"))
         (setq symbol default))))
-  (shell-command-to-string (format "%s %s %s -i%s"
-                                   tsimport-command
-                                   (buffer-file-name)
-                                   symbol
-                                   (if tsimport-backup-suffix
-                                       (concat "=" tsimport-backup-suffix)
-                                     ""))))
+  (let ((buffer (current-buffer))
+        (replacement))
+    (with-temp-buffer
+      (if (= (call-process tsimport-command nil t nil (buffer-file-name buffer) symbol) 0)
+          (setq replacement (buffer-substring-no-properties (point-min) (point-max)))
+        (error "Something happened:\n%s" (buffer-substring-no-properties (point-min) (point-max)))))
+    (bookmark-set "tsimport")
+    (erase-buffer)
+    (insert replacement)
+    (bookmark-jump "tsimport")))
   ;; (message "symbol %s" symbol))
 
 (provide 'tsimport)
