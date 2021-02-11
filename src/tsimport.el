@@ -3,6 +3,8 @@
 (defvar tsimport-command "tsimport")
 (defun tsimport (&optional symbol)
   (interactive)
+  (when (buffer-modified-p)
+    (error "You should not run this on an unsaved buffer"))
   (unless symbol
     (let ((default (thing-at-point 'symbol))
           (alternatives (split-string (shell-command-to-string (format "%s %s --complete" tsimport-command (buffer-file-name))))))
