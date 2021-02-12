@@ -236,7 +236,7 @@ if (importModule) {
 
         const idx = parsed.sourceCode.indexOf("{", importModule.start);
         newSrc = `${parsed.sourceCode.substr(0, idx)}${symbol}, ${parsed.sourceCode.substr(idx)}`;
-    } else if (importModule.named) {
+    } else if (importModule.named.length) {
         // we already have named imports but not this one, rewrite
         // sorted
         const startBrace = parsed.sourceCode.indexOf("{", importModule.start);
