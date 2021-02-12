@@ -208,14 +208,13 @@ if (symbolExport.length > 1) {
 }
 
 assert(found);
-const importPath = found.path.substr(0, found.path.length - 3);
 verbose("Found", symbol, "at", found);
 let insertPoint: number | undefined;
 let importModule: ImportModule | undefined;
 if (parsed.imports) {
     for (let idx = 0; idx < parsed.imports.length; ++idx) {
-        verbose("comparing", parsed.imports[idx].path, importPath);
-        if (parsed.imports[idx].path === importPath) {
+        verbose("comparing", parsed.imports[idx].path, found.path);
+        if (parsed.imports[idx].path === found.path) {
             importModule = parsed.imports[idx];
             insertPoint = undefined;
             // console.error("Already have it", parsed.imports[idx]);

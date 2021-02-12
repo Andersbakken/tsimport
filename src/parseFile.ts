@@ -21,6 +21,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
     } else {
         transformedPath = filePath;
     }
+    transformedPath = transformedPath.substr(0, transformedPath.length - 3); // take away the .ts
     let src;
     try {
         src = fs.readFileSync(filePath, "utf8");
