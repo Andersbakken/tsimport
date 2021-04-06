@@ -190,9 +190,7 @@ if (symbolExport.length > 1) {
             }
         }
     }
-    if (found) {
-        console.log("Found export at", found);
-    } else {
+    if (!found) {
         console.error(
             `Found multiple exports for ${symbol}\n${symbolExport
                 .map((e: Export) => {
