@@ -115,8 +115,9 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                 if (!def) {
                                     if (!file.namedExports) {
                                         file.namedExports = [];
+                                    } else if (!file.namedExports.includes(thing)) {
+                                        file.namedExports.push(thing);
                                     }
-                                    file.namedExports.push(thing);
                                 } else if (namedDefault) {
                                     if (file.defaultExport !== thing) {
                                         verbose(
