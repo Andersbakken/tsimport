@@ -7,21 +7,13 @@ import fs from "fs";
 import path from "path";
 
 export const enum ParseFileMode {
-    Imports,
-    Exports
+    Imports = 0x1,
+    Exports = 0x2
 }
 
 export function parseFile(filePath: string, mode: ParseFileMode, options: Options): File | undefined {
-    let transformedPath: string;
     const srcRoot: string | undefined = options["src-root"];
     assert(srcRoot);
-    if (mode === ParseFileMode.Exports && options.tilde && filePath.lastIndexOf(srcRoot, 0) === 0) {
-        transformedPath = `~/${filePath.substr(srcRoot.length)}`;
-        // console.log("Doing
-    } else {
-        transformedPath = filePath;
-    }
-    transformedPath = transformedPath.substr(0, transformedPath.length - 3); // take away the .ts
     let src;
     try {
         src = fs.readFileSync(filePath, "utf8");
@@ -29,11 +21,21 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         verbose("Failed to read file", filePath, err);
         return undefined;
     }
-    const file = new File(transformedPath, src);
 
     if (options.tilde === undefined && src.indexOf(' from "~/') !== -1) {
         options.tilde = true;
     }
+
+    let transformedPath: string;
+    if (mode & ParseFileMode.Exports && options.tilde && filePath.lastIndexOf(srcRoot, 0) === 0) {
+        transformedPath = `~/${filePath.substr(srcRoot.length)}`;
+        // console.log("Doing
+    } else {
+        transformedPath = filePath;
+    }
+    transformedPath = transformedPath.substr(0, transformedPath.length - 3); // take away the .ts
+
+    const file = new File(transformedPath, src);
 
     let commentStart = undefined;
     let idx = 0;
@@ -43,7 +45,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         switch (src[idx]) {
             case "e":
                 if (
-                    mode === ParseFileMode.Exports &&
+                    mode & ParseFileMode.Exports &&
                     (idx === 0 || src[idx - 1] === "\n") &&
                     src.substr(idx + 1, 6) === "xport "
                 ) {
@@ -145,7 +147,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
             case "i":
                 // console.log(parseImports, idx === 0 || src[idx - 1] === "\n", src.substr(idx + 1, 6));
                 if (
-                    mode === ParseFileMode.Imports &&
+                    mode & ParseFileMode.Imports &&
                     (idx === 0 || src[idx - 1] === "\n") &&
                     src.substr(idx + 1, 6) === "mport "
                 ) {
