@@ -50,7 +50,15 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     let i = forwardSpaces(idx + 6, src);
                     // const end = src.indexOf(" ",
                     const def = src.substr(i, 8) === "default ";
-                    // console.log("Found an export", idx, i, src[i], def);
+                    verbose(
+                        "Found an export in",
+                        transformedPath,
+                        idx,
+                        i,
+                        src[i],
+                        def,
+                        src.substring(idx, src.indexOf("\n", idx))
+                    );
                     if (def) {
                         const based = path.basename(filePath);
                         file.defaultExport = based.substr(0, based.length - 3);
