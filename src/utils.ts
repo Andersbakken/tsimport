@@ -175,7 +175,8 @@ export function verbose(...args: unknown[]): void {
     }
 }
 
-export function gather(dir: string, srcFile: string, dirs: string[], files: string[]): void {
+export function gather(dir: string, srcFile: string | undefined, dirs: string[], files: string[]): void {
+    assert(dir.endsWith("/"));
     let found = false;
     fs.readdirSync(dir, { withFileTypes: true }).forEach((f) => {
         if (f.isFile()) {
@@ -194,7 +195,7 @@ export function gather(dir: string, srcFile: string, dirs: string[], files: stri
             f.name !== "examples" &&
             f.name !== "__tests__"
         ) {
-            gather(path.join(dir, f.name), srcFile, dirs, files);
+            gather(path.join(dir, f.name) + "/", srcFile, dirs, files);
         }
         // console.log(f.name, f.isDirectory());
     });
