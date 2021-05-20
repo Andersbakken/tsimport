@@ -7,6 +7,7 @@ import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
 import minimist from "minimist";
+import path from "path";
 
 function addExport(allExports: Map<string, Export[]>, name: string, def: boolean, file: string): void {
     verbose(`Added export ${name}${def ? " default" : ""} ${file}`);
@@ -19,14 +20,16 @@ function addExport(allExports: Map<string, Export[]>, name: string, def: boolean
     }
 }
 
-function processFiles(fileNames: string[], options: Options): Map<string, Export[]> {
+function processFiles(fileNames: string[], options: Options, srcFile: string): Map<string, Export[]> {
     const allExports = new Map<string, Export[]>();
     // console.log(parsed);
     const files: File[] = [];
     fileNames.forEach((f: string) => {
-        const p = parseFile(f, ParseFileMode.Exports, options);
-        if (p) {
-            files.push(p);
+        if (f !== srcFile) {
+            const p = parseFile(f, ParseFileMode.Exports, options);
+            if (p) {
+                files.push(p);
+            }
         }
     });
 
@@ -46,6 +49,25 @@ function processFiles(fileNames: string[], options: Options): Map<string, Export
     return allExports;
 }
 
+function fixPath(srcFile: string, importPath: string): string {
+    if (importPath.startsWith("~/")) {
+        return importPath;
+    }
+
+    let relative = path.relative(path.dirname(srcFile), importPath);
+    // console.log(relative);
+    if (!relative.startsWith(".")) {
+        relative = "./" + relative;
+    }
+    if (relative.endsWith(".d.ts")) {
+        return relative.substr(0, relative.length - 5);
+    }
+    if (relative.endsWith(".ts")) {
+        return relative.substr(0, relative.length - 3);
+    }
+    return relative;
+}
+
 export default function processSrcFile(
     args: minimist.ParsedArgs,
     options: Options,
@@ -53,8 +75,11 @@ export default function processSrcFile(
     symbol: string | undefined,
     files: string[]
 ): void {
-    const allExports = processFiles(files, options);
+    const allExports = processFiles(files, options, srcFile);
     const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
+    if (parsed) {
+        fixFileNames(options, [parsed]);
+    }
     if (args.complete !== undefined) {
         let keys = Array.from(allExports.keys());
         if (parsed && parsed.imports) {
@@ -209,14 +234,16 @@ export default function processSrcFile(
         }
     } else if (found.default) {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${found.path}";\n${
-            insertPoint === 0 ? "\n" : ""
-        }${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${fixPath(
+            srcFile,
+            found.path
+        )}";\n${insertPoint === 0 ? "\n" : ""}${parsed.sourceCode.substr(insertPoint)}`;
     } else {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${found.path}";\n${
-            insertPoint === 0 ? "\n" : ""
-        }${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${fixPath(
+            srcFile,
+            found.path
+        )}";\n${insertPoint === 0 ? "\n" : ""}${parsed.sourceCode.substr(insertPoint)}`;
     }
 
     if (options["in-place"]) {
