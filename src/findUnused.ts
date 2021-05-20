@@ -2,14 +2,14 @@ import { ParseFileMode, parseFile } from "~/parseFile";
 import { fixFileNames, verbose } from "~/utils";
 import Export from "~/Export";
 import File from "~/File";
-import ImportModule from "~/ImportModule";
+import Import from "~/Import";
 import Options from "~/Options";
 
 export default function findUnused(options: Options, fileNames: string[]): boolean {
     verbose("findUnused called", options, fileNames);
     // console.log(parsed);
     const exports = new Map<string, Export>();
-    const imports: ImportModule[] = [];
+    const imports: Import[] = [];
     const files: File[] = [];
     fileNames.forEach((f: string) => {
         const p: File | undefined = parseFile(f, ParseFileMode.Imports | ParseFileMode.Exports, options);
@@ -35,14 +35,24 @@ export default function findUnused(options: Options, fileNames: string[]): boole
         }
     });
     // console.log(exports, imports);
-    imports.forEach((imp: ImportModule) => {
+    imports.forEach((imp: Import) => {
         imp.named.forEach((name: string) => {
             const removed = exports.delete(`${imp.path}:${name}`);
             verbose(`Removing named ${imp.path}:${name} -> ${removed}`);
         });
         if (imp.default) {
-            const removed = exports.delete(`${imp.path}:${imp.default}:d`);
-            verbose(`Removing default ${imp.path}:${imp.default}:d -> ${removed}`);
+            if (imp.default === "*") {
+                for (const [key, value] of exports) {
+                    const file = key.substring(0, key.indexOf(":"));
+                    if (file === imp.path) {
+                        verbose(`Removing default * import ${key}`);
+                        exports.delete(key);
+                    }
+                }
+            } else {
+                const removed = exports.delete(`${imp.path}:${imp.default}:d`);
+                verbose(`Removing default ${imp.path}:${imp.default}:d -> ${removed}`);
+            }
         }
     });
 

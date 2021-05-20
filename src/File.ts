@@ -1,9 +1,9 @@
 import Export from "~/Export";
-import ImportModule from "~/ImportModule";
+import Import from "~/Import";
 
 export default class File {
     path: string;
-    imports?: ImportModule[];
+    imports?: Import[];
     namedExports?: Export[];
     defaultExport?: Export;
     sourceCode: string;

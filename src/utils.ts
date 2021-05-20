@@ -1,6 +1,6 @@
 import Export from "~/Export";
 import File from "~/File";
-import ImportModule from "~/ImportModule";
+import Import from "~/Import";
 import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
@@ -206,7 +206,7 @@ export function fixFileNames(options: Options, files: File[]): void {
         files.forEach((file: File) => {
             file.path = map(file.path, srcRoot, cache);
             if (file.imports) {
-                file.imports.forEach((imp: ImportModule) => {
+                file.imports.forEach((imp: Import) => {
                     imp.path = map(imp.path, srcRoot, cache);
                 });
             }

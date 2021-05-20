@@ -1,7 +1,7 @@
 import { forwardNonSpaces, forwardSpaces, forwardSymbol, isSymbol, verbose } from "~/utils";
 import Export from "~/Export";
 import File from "~/File";
-import ImportModule from "~/ImportModule";
+import Import from "~/Import";
 import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
@@ -70,6 +70,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     if (def) {
                         const based = path.basename(filePath);
                         file.defaultExport = new Export(based.substr(0, based.length - 3), filePath, line, true);
+                        verbose(`Adding default export ${file.defaultExport.name} for ${filePath}:${line}`);
                         assert(file.defaultExport, "Gotta have it");
                         idx = i + 8;
                     }
@@ -99,7 +100,8 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                             assert(file.namedExports);
                                             const trimmed = x.trim();
                                             if (!has(trimmed, file.namedExports)) {
-                                                file.namedExports.push(new Export(x.trim(), filePath, line));
+                                                file.namedExports.push(new Export(trimmed, filePath, line));
+                                                verbose(`Adding named export ${trimmed} for ${filePath}:${line}`);
                                             }
                                         });
                                     verbose("Got some exports", filePath, file.namedExports);
@@ -138,6 +140,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
 
                                     if (!has(thing, file.namedExports)) {
                                         file.namedExports.push(new Export(thing, filePath, line));
+                                        verbose(`Adding named export ${thing} for ${filePath}:${line}`);
                                     }
                                 } else if (namedDefault) {
                                     if (file.defaultExport && file.defaultExport.name !== thing) {
@@ -176,7 +179,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     if (options.tilde === undefined && fileName.lastIndexOf("~/", 0) === 0) {
                         options.tilde = true;
                     }
-                    const imp = new ImportModule(fileName, idx, end);
+                    const imp = new Import(fileName, idx, end);
                     if (!file.imports) {
                         file.imports = [];
                     }
@@ -195,7 +198,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     }
 
                     // import
-                    const imports = src.substring(idx + 7, from).trim();
+                    let imports = src.substring(idx + 7, from).trim();
                     if (imports[0] === "{") {
                         if (imports[imports.length - 1] !== "}") {
                             idx = quoteEnd;
@@ -205,10 +208,21 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                             .substring(1, imports.length - 2)
                             .split(",")
                             .map((x) => {
+                                const asIdx = x.indexOf(" as ");
+                                if (asIdx !== -1) {
+                                    x = x.substring(0, asIdx);
+                                }
                                 return x.trim();
                             });
+                        verbose(`Adding named imports: ${imp.named} for ${filePath} from ${fileName}`);
                         // console.log(importArray);
                     } else {
+                        const asIdx = imports.indexOf(" as ");
+                        if (asIdx !== -1) {
+                            imports = imports.substring(0, asIdx);
+                        }
+                        imports = imports.trim();
+                        verbose(`Adding default import: ${imports} for ${filePath} from ${fileName}`);
                         imp.default = imports;
                     }
                     // if (imports !=

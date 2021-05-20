@@ -2,7 +2,7 @@ import { ParseFileMode, parseFile } from "~/parseFile";
 import { findCommonRoot, fixFileNames, verbose } from "~/utils";
 import Export from "~/Export";
 import File from "~/File";
-import ImportModule from "~/ImportModule";
+import Import from "~/Import";
 import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
@@ -189,7 +189,7 @@ export default function processSrcFile(
     assert(found);
     verbose("Found", symbol, "at", found);
     let insertPoint: number | undefined;
-    let importModule: ImportModule | undefined;
+    let importModule: Import | undefined;
     if (parsed.imports) {
         for (let idx = 0; idx < parsed.imports.length; ++idx) {
             verbose("comparing", parsed.imports[idx].path, found.path);

@@ -1,4 +1,4 @@
-export default class ImportModule {
+export default class Import {
     path: string;
     start: number;
     end: number;
