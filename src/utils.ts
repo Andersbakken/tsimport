@@ -1,3 +1,4 @@
+import Export from "~/Export";
 import File from "~/File";
 import ImportModule from "~/ImportModule";
 import Options from "~/Options";
@@ -43,21 +44,6 @@ export function forwardSpaces(idx: number, src: string): number {
     return idx;
 }
 
-export function backwardSpaces(idx: number, src: string): number {
-    while (idx > 0) {
-        switch (src.charCodeAt(idx)) {
-            case 32:
-            case 10:
-            case 9:
-                break;
-            default:
-                return idx;
-        }
-        --idx;
-    }
-    return idx;
-}
-
 export function forwardNonSpaces(idx: number, src: string): number {
     while (idx < src.length) {
         switch (src.charCodeAt(idx)) {
@@ -69,21 +55,6 @@ export function forwardNonSpaces(idx: number, src: string): number {
                 break;
         }
         ++idx;
-    }
-    return idx;
-}
-
-export function backwardNonSpaces(idx: number, src: string): number {
-    while (idx > 0) {
-        switch (src.charCodeAt(idx)) {
-            case 32:
-            case 10:
-            case 9:
-                return idx;
-            default:
-                break;
-        }
-        --idx;
     }
     return idx;
 }
@@ -228,7 +199,7 @@ function map(path: string, srcRoot: string, cache: Map<string, string>): string 
 }
 
 export function fixFileNames(options: Options, files: File[]): void {
-    if (options.tilde && !options.explicitTilde) {
+    if (options.tilde) {
         const srcRoot = options["src-root"];
         assert(srcRoot);
         const cache: Map<string, string> = new Map<string, string>();
@@ -237,6 +208,14 @@ export function fixFileNames(options: Options, files: File[]): void {
             if (file.imports) {
                 file.imports.forEach((imp: ImportModule) => {
                     imp.path = map(imp.path, srcRoot, cache);
+                });
+            }
+            if (file.defaultExport) {
+                file.defaultExport.path = map(file.defaultExport.path, srcRoot, cache);
+            }
+            if (file.namedExports) {
+                file.namedExports.forEach((exp: Export) => {
+                    exp.path = map(exp.path, srcRoot, cache);
                 });
             }
         });

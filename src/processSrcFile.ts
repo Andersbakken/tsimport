@@ -9,12 +9,11 @@ import fs from "fs";
 import minimist from "minimist";
 import path from "path";
 
-function addExport(allExports: Map<string, Export[]>, name: string, def: boolean, file: string): void {
-    verbose(`Added export ${name}${def ? " default" : ""} ${file}`);
-    const cur = allExports.get(name);
-    const exp = new Export(def, file);
+function addExport(allExports: Map<string, Export[]>, exp: Export): void {
+    verbose(`Added export ${exp.name}${exp.default ? " default" : ""} ${exp.path}`);
+    const cur = allExports.get(exp.name);
     if (!cur) {
-        allExports.set(name, [exp]);
+        allExports.set(exp.name, [exp]);
     } else {
         cur.push(exp);
     }
@@ -37,12 +36,12 @@ function processFiles(fileNames: string[], options: Options, srcFile: string): M
     files.forEach((p: File) => {
         // console.log(file)
         if (p.defaultExport) {
-            addExport(allExports, p.defaultExport, true, p.path);
+            addExport(allExports, p.defaultExport);
         }
 
         if (p.namedExports) {
-            p.namedExports.forEach((exp) => {
-                addExport(allExports, exp, false, p.path);
+            p.namedExports.forEach((exp: Export) => {
+                addExport(allExports, exp);
             });
         }
     });

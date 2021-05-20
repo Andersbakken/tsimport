@@ -1,8 +1,12 @@
 export default class Export {
-    readonly default: boolean;
-    readonly path: string;
-    constructor(def: boolean, path: string) {
-        this.default = def;
+    name: string;
+    default: boolean;
+    path: string;
+    line: number;
+    constructor(name: string, path: string, line: number, def?: boolean) {
+        this.name = name;
+        this.default = def || false;
         this.path = path;
+        this.line = line;
     }
 }

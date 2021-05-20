@@ -1,10 +1,11 @@
+import Export from "~/Export";
 import ImportModule from "~/ImportModule";
 
 export default class File {
     path: string;
     imports?: ImportModule[];
-    namedExports?: string[];
-    defaultExport?: string;
+    namedExports?: Export[];
+    defaultExport?: Export;
     sourceCode: string;
 
     constructor(filePath: string, src: string) {

@@ -1,4 +1,5 @@
 import { forwardNonSpaces, forwardSpaces, forwardSymbol, isSymbol, verbose } from "~/utils";
+import Export from "~/Export";
 import File from "~/File";
 import ImportModule from "~/ImportModule";
 import Options from "~/Options";
@@ -9,6 +10,15 @@ import path from "path";
 export const enum ParseFileMode {
     Imports = 0x1,
     Exports = 0x2
+}
+
+function has(name: string, exports: Export[]): boolean {
+    for (const exp of exports) {
+        if (exp.name === name) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export function parseFile(filePath: string, mode: ParseFileMode, options: Options): File | undefined {
@@ -35,6 +45,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
             mode === ParseFileMode.Imports ? "imports" : mode === ParseFileMode.Exports ? "exports" : "import/exports"
         }`
     );
+    let line = 1;
     while (idx < src.length) {
         // console.log("looking at", idx, src.length);
         switch (src[idx]) {
@@ -58,7 +69,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     );
                     if (def) {
                         const based = path.basename(filePath);
-                        file.defaultExport = based.substr(0, based.length - 3);
+                        file.defaultExport = new Export(based.substr(0, based.length - 3), filePath, line, true);
                         assert(file.defaultExport, "Gotta have it");
                         idx = i + 8;
                     }
@@ -86,7 +97,10 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                         .split(/, */)
                                         .forEach((x) => {
                                             assert(file.namedExports);
-                                            file.namedExports.push(x.trim());
+                                            const trimmed = x.trim();
+                                            if (!has(trimmed, file.namedExports)) {
+                                                file.namedExports.push(new Export(x.trim(), filePath, line));
+                                            }
                                         });
                                     verbose("Got some exports", filePath, file.namedExports);
                                     // console.error("This should have been defaulted", filePath, thing, i);
@@ -119,17 +133,19 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                             default:
                                 if (!def) {
                                     if (!file.namedExports) {
-                                        file.namedExports = [thing];
-                                    } else if (!file.namedExports.includes(thing)) {
-                                        file.namedExports.push(thing);
+                                        file.namedExports = [];
+                                    }
+
+                                    if (!has(thing, file.namedExports)) {
+                                        file.namedExports.push(new Export(thing, filePath, line));
                                     }
                                 } else if (namedDefault) {
-                                    if (file.defaultExport !== thing) {
+                                    if (file.defaultExport && file.defaultExport.name !== thing) {
                                         verbose(
                                             `Rewriting export name from "${file.defaultExport}" to "${thing}" for ${file.path}`
                                         );
+                                        file.defaultExport.name = thing;
                                     }
-                                    file.defaultExport = thing;
                                 }
                                 break;
                         }
@@ -212,6 +228,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                         const endLine = src.indexOf("\n", idx);
                         if (endLine !== -1) {
                             idx = endLine + 1;
+                            ++line;
                             continue;
                         }
                     } else if (ch === "*") {
@@ -224,6 +241,10 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                 if (commentStart !== undefined && src[idx + 1] === "/") {
                     commentStart = undefined;
                 }
+                break;
+            case "\n":
+                ++line;
+                break;
         }
         ++idx;
     }

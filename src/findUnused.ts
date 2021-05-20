@@ -1,13 +1,14 @@
 import { ParseFileMode, parseFile } from "~/parseFile";
 import { fixFileNames, verbose } from "~/utils";
-import File from "~/File.ts";
+import Export from "~/Export";
+import File from "~/File";
 import ImportModule from "~/ImportModule";
 import Options from "~/Options";
 
 export default function findUnused(options: Options, fileNames: string[]): boolean {
     verbose("findUnused called", options, fileNames);
     // console.log(parsed);
-    const exports = new Set<string>();
+    const exports = new Map<string, Export>();
     const imports: ImportModule[] = [];
     const files: File[] = [];
     fileNames.forEach((f: string) => {
@@ -19,13 +20,13 @@ export default function findUnused(options: Options, fileNames: string[]): boole
     fixFileNames(options, files);
     files.forEach((p: File) => {
         if (p.namedExports) {
-            p.namedExports.forEach((name: string) => {
-                exports.add(`${p.path}:${name}`);
-                verbose(`Adding named ${p.path}:${name}`);
+            p.namedExports.forEach((exp: Export) => {
+                exports.set(`${exp.path}:${exp.name}`, exp);
+                verbose(`Adding named ${exp.path}:${exp.name}`);
             });
         }
         if (p.defaultExport) {
-            exports.add(`${p.path}:${p.defaultExport}:d`);
+            exports.set(`${p.path}:${p.defaultExport.name}:d`, p.defaultExport);
             verbose(`Adding default ${p.path}:${p.defaultExport}:d`);
         }
 
@@ -49,14 +50,16 @@ export default function findUnused(options: Options, fileNames: string[]): boole
         console.log("Didn't find any unimported exports");
         return false;
     }
-    for (const key of exports) {
+    for (const [key, value] of exports) {
         const split = key.split(":");
         let path = split[0];
         if (path.startsWith("~/")) {
             path = options["src-root"] + path.substr(2);
         }
         // console.log(key, split);
-        console.log(`${path}.ts:1:1 warning: ${split[2] ? "Default" : "Named"} export ${split[1]} is never imported`);
+        console.log(
+            `${path}.ts:${value.line}: warning: ${split[2] ? "Default" : "Named"} export ${split[1]} is never imported`
+        );
         // console.log(`${split[2] ? "Default" : "Named"} export "${split[1]}" from ${split[0]} is never imported`);
     }
     return true;
