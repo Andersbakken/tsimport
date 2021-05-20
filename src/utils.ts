@@ -162,7 +162,7 @@ export function loadConfig(options: Options, root: string): Options {
     if (!options["src-root"]) {
         options["src-root"] = root;
     }
-    if (options["src-root"][options["src-root"].length - 1] !== "/") {
+    if (!options["src-root"].endsWith("/")) {
         options["src-root"] += "/";
     }
 
