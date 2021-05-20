@@ -122,7 +122,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                             default:
                                 if (!def) {
                                     if (!file.namedExports) {
-                                        file.namedExports = [];
+                                        file.namedExports = [thing];
                                     } else if (!file.namedExports.includes(thing)) {
                                         file.namedExports.push(thing);
                                     }
