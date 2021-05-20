@@ -26,16 +26,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         options.tilde = true;
     }
 
-    let transformedPath: string;
-    if (mode & ParseFileMode.Exports && options.tilde && filePath.lastIndexOf(srcRoot, 0) === 0) {
-        transformedPath = `~/${filePath.substr(srcRoot.length)}`;
-        // console.log("Doing
-    } else {
-        transformedPath = filePath;
-    }
-    transformedPath = transformedPath.substr(0, transformedPath.length - 3); // take away the .ts
-
-    const file = new File(transformedPath, src);
+    const file = new File(filePath, src);
 
     let commentStart = undefined;
     let idx = 0;
@@ -58,7 +49,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     const def = src.substr(i, 8) === "default ";
                     verbose(
                         "Found an export in",
-                        transformedPath,
+                        filePath,
                         idx,
                         i,
                         src[i],

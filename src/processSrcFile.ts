@@ -1,15 +1,14 @@
 import { ParseFileMode, parseFile } from "~/parseFile";
-import { findCommonRoot, verbose } from "~/utils";
+import { findCommonRoot, fixFileNames, verbose } from "~/utils";
 import Export from "~/Export";
+import File from "~/File";
 import ImportModule from "~/ImportModule";
 import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
 import minimist from "minimist";
 
-const allExports = new Map<string, Export[]>();
-
-function addExport(name: string, def: boolean, file: string): void {
+function addExport(allExports: Map<string, Export[]>, name: string, def: boolean, file: string): void {
     verbose(`Added export ${name}${def ? " default" : ""} ${file}`);
     const cur = allExports.get(name);
     const exp = new Export(def, file);
@@ -20,23 +19,31 @@ function addExport(name: string, def: boolean, file: string): void {
     }
 }
 
-function processFiles(files: string[], options: Options) {
+function processFiles(fileNames: string[], options: Options): Map<string, Export[]> {
+    const allExports = new Map<string, Export[]>();
     // console.log(parsed);
-    files.forEach((f: string) => {
+    const files: File[] = [];
+    fileNames.forEach((f: string) => {
         const p = parseFile(f, ParseFileMode.Exports, options);
         if (p) {
-            // console.log(file)
-            if (p.defaultExport) {
-                addExport(p.defaultExport, true, p.path);
-            }
-
-            if (p.namedExports) {
-                p.namedExports.forEach((exp) => {
-                    addExport(exp, false, p.path);
-                });
-            }
+            files.push(p);
         }
     });
+
+    fixFileNames(options, files);
+    files.forEach((p: File) => {
+        // console.log(file)
+        if (p.defaultExport) {
+            addExport(allExports, p.defaultExport, true, p.path);
+        }
+
+        if (p.namedExports) {
+            p.namedExports.forEach((exp) => {
+                addExport(allExports, exp, false, p.path);
+            });
+        }
+    });
+    return allExports;
 }
 
 export default function processSrcFile(
@@ -46,9 +53,9 @@ export default function processSrcFile(
     symbol: string | undefined,
     files: string[]
 ): void {
+    const allExports = processFiles(files, options);
     const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
     if (args.complete !== undefined) {
-        processFiles(files, options);
         let keys = Array.from(allExports.keys());
         if (parsed && parsed.imports) {
             const alreadyHave = new Set();
@@ -122,7 +129,6 @@ export default function processSrcFile(
         }
     }
 
-    processFiles(files, options);
     const symbolExport = allExports.get(symbol);
     if (!symbolExport) {
         console.error(`Can't find symbol ${symbol}`);

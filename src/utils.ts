@@ -1,3 +1,5 @@
+import File from "~/File";
+import ImportModule from "~/ImportModule";
 import Options from "~/Options";
 import assert from "assert";
 import fs from "fs";
@@ -202,5 +204,41 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
     });
     if (found) {
         dirs.push(dir);
+    }
+}
+
+function map(path: string, srcRoot: string, cache: Map<string, string>): string {
+    let ret = cache.get(path);
+    if (ret) {
+        return ret;
+    }
+
+    if (path.startsWith(srcRoot)) {
+        ret = `~/${path.substring(srcRoot.length)}`;
+        if (ret.endsWith(".d.ts")) {
+            ret = ret.substring(0, ret.length - 5);
+        } else if (ret.endsWith(".ts")) {
+            ret = ret.substring(0, ret.length - 3);
+        }
+        cache.set(path, ret);
+    } else {
+        ret = path;
+    }
+    return ret;
+}
+
+export function fixFileNames(options: Options, files: File[]): void {
+    if (options.tilde && !options.explicitTilde) {
+        const srcRoot = options["src-root"];
+        assert(srcRoot);
+        const cache: Map<string, string> = new Map<string, string>();
+        files.forEach((file: File) => {
+            file.path = map(file.path, srcRoot, cache);
+            if (file.imports) {
+                file.imports.forEach((imp: ImportModule) => {
+                    imp.path = map(imp.path, srcRoot, cache);
+                });
+            }
+        });
     }
 }

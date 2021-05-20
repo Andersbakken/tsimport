@@ -25,6 +25,17 @@
     (erase-buffer)
     (insert replacement)
     (bookmark-jump "tsimport")))
-  ;; (message "symbol %s" symbol))
+;; (message "symbol %s" symbol))
+
+(defun tsimport-find-unused ()
+  (interactive)
+  (compile (concat tsimport-command " --find-unused-exports")))
+  ;; (switch-to-buffer (get-buffer-create "*tsimport unused*"))
+  ;; (let ((inhibit-read-only t))
+  ;;   (erase-buffer))
+  ;; (when (not (= (call-process tsimport-command nil t nil "--find-unused-exports") 0))
+  ;;   (error "Something happened:\n%s" (buffer-substring-no-properties (point-min) (point-max))))
+  ;; (goto-char (point-min))
+  ;; (setq buffer-read-only t))
 
 (provide 'tsimport)

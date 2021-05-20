@@ -53,6 +53,7 @@ if (!root) {
 const options: Options = loadConfig(
     {
         tilde: args.tilde,
+        explicitTilde: typeof args.tilde !== "undefined",
         "src-root": args["src-root"] || root,
         verbose: args.verbose || args.v,
         explicitSrcRoot: typeof args["src-root"] === "string",
@@ -75,5 +76,5 @@ if (srcFile) {
     processSrcFile(args, options, srcFile, symbol, files);
 } else {
     assert(unused);
-    findUnused(options, files);
+    process.exit(findUnused(options, files) ? 1 : 0);
 }
