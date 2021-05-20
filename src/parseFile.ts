@@ -39,7 +39,11 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
 
     let commentStart = undefined;
     let idx = 0;
-    verbose(`parsing file ${filePath} ${mode === ParseFileMode.Imports ? "imports" : "exports"}`);
+    verbose(
+        `parsing file ${filePath} ${
+            mode === ParseFileMode.Imports ? "imports" : mode === ParseFileMode.Exports ? "exports" : "import/exports"
+        }`
+    );
     while (idx < src.length) {
         // console.log("looking at", idx, src.length);
         switch (src[idx]) {
