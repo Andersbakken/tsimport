@@ -8,7 +8,8 @@ type Printer = (...args: unknown[]) => void;
 export function usage(print: Printer): void {
     print(`Usage:
 tsimport [/path/to/file] [symbol] [--src-root <root>] [--use-tilde] [--verbose|-v] [--inplace|-i <backupsuffix>]
-tsimport [/path/to/file-or-directory] --complete [sym]`);
+tsimport [/path/to/file-or-directory] --complete [sym]
+tsimport [/path/to/file-or-directory] --find-unused-exports|-u`);
 }
 
 export function findPackageDotJsonDir(dir: string): string | undefined {
