@@ -42,7 +42,7 @@ export default function findUnused(options: Options, fileNames: string[]): boole
         });
         if (imp.default) {
             if (imp.default === "*") {
-                for (const [key, value] of exports) {
+                for (const [key] of exports) {
                     const file = key.substring(0, key.indexOf(":"));
                     if (file === imp.path) {
                         verbose(`Removing default * import ${key}`);

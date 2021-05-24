@@ -108,7 +108,7 @@ export function findCommonRoot(strings: string[]): string {
     for (let idx = 1; idx < strings.length; ++idx) {
         shared = Math.min(shared, findSharedRoot(strings[0], strings[idx]));
     }
-    // console.log("Got root", strings[0].substr(0, shared), strings);
+    console.log("Got root", strings[0].substr(0, shared), strings);
     return strings[0].substr(0, shared);
 }
 
@@ -154,7 +154,8 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
     let found = false;
     fs.readdirSync(dir, { withFileTypes: true }).forEach((f) => {
         if (f.isFile()) {
-            if (f.name.substr(-3) === ".ts" && f.name.substr(-5) !== ".d.ts") {
+            if (f.name.endsWith(".ts")) {
+                // && !f.name.endsWith(".d.ts")) {
                 const file = path.resolve(path.join(dir, f.name));
                 if (file !== srcFile) {
                     files.push(file);
@@ -166,6 +167,7 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
             f.isDirectory() &&
             f.name !== "node_modules" &&
             f.name !== "tests" &&
+            f.name !== "dist" &&
             f.name !== "examples" &&
             f.name !== "__tests__"
         ) {

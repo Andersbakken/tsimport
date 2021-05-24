@@ -233,6 +233,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     // let match = /import \(.*\) from "\([^"]*\)"/.exec(src.substr(idx));
                     // console.log("Found import at", idx, src.substr(idx, src.indexOf("\n")));
                     // console.log("Found import", match);
+                    idx = quoteEnd + 1;
                 }
                 break;
             case "/":
@@ -251,6 +252,28 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     }
                 }
                 break;
+            case '"':
+            case "'":
+            case "`": {
+                const quote = src[idx];
+                let slashes = 0;
+                for (let i = idx + 1; i < src.length; ++i) {
+                    const ch = src[i];
+                    if (ch === "\\") {
+                        ++slashes;
+                    } else {
+                        if (slashes % 2 === 0 && ch === quote) {
+                            //console.log(`Skipped range ${src.substring(idx, i + 1)}`);
+                            idx = i;
+                            break;
+                        } else if (ch === "\n") {
+                            ++line;
+                        }
+                        slashes = 0;
+                    }
+                }
+                break;
+            }
             case "*":
                 if (commentStart !== undefined && src[idx + 1] === "/") {
                     commentStart = undefined;

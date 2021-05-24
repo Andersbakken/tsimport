@@ -6,7 +6,7 @@ import minimist from "minimist";
 import path from "path";
 import processSrcFile from "~/processSrcFile";
 
-const args = minimist(process.argv.slice(1));
+const args = minimist(process.argv.slice(2)); // , { boolean: ["v", "verbose", "find-unused-exports", "u"] });
 if (args.help) {
     usage(console.log.bind(console));
     process.exit(0);
@@ -27,20 +27,20 @@ let srcFile: string | undefined;
 if (unused) {
     root = args["src-root"] || findPackageDotJsonDir(process.cwd());
 } else {
-    if (args._.length === 1) {
+    if (args._.length === 0) {
         console.error("Nothing to do");
         usage(console.error.bind(console));
         process.exit(1);
-    } else if (args._.length === 2) {
+    } else if (args._.length === 1) {
         if (args.complete === undefined) {
             console.error("Nothing to do");
             usage(console.error.bind(console));
             process.exit(1);
         }
     } else {
-        symbol = args._[2];
+        symbol = args._[1];
     }
-    srcFile = path.resolve(args._[1]);
+    srcFile = path.resolve(args._[0]);
 
     root = findPackageDotJsonDir(path.dirname(srcFile));
 }
