@@ -108,7 +108,7 @@ export function findCommonRoot(strings: string[]): string {
     for (let idx = 1; idx < strings.length; ++idx) {
         shared = Math.min(shared, findSharedRoot(strings[0], strings[idx]));
     }
-    console.log("Got root", strings[0].substr(0, shared), strings);
+    // console.log("Got root", strings[0].substr(0, shared), strings);
     return strings[0].substr(0, shared);
 }
 
