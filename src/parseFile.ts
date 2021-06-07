@@ -129,6 +129,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                             case "const":
                             case "abstract":
                             case "default":
+                            case "async":
                                 i = forwardSpaces(next, src);
                                 done = false;
                                 break;
