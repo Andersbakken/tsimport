@@ -74,7 +74,7 @@ export function forwardSymbol(idx: number, src: string): number {
     while (idx < src.length) {
         const code = src.charCodeAt(idx);
         if (
-            (code >= 49 && code <= 57) ||
+            (code >= 48 && code <= 57) ||
             code === 95 ||
             code === 36 ||
             (code >= 65 && code <= 90) ||
