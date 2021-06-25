@@ -168,6 +168,7 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
             f.name !== "node_modules" &&
             f.name !== "tests" &&
             f.name !== "dist" &&
+            f.name !== ".git" &&
             f.name !== "examples" &&
             f.name !== "__tests__"
         ) {
