@@ -24,13 +24,15 @@ function processFiles(fileNames: string[], options: Options, srcFile: string): M
     // console.log(parsed);
     const files: File[] = [];
     fileNames.forEach((f: string) => {
-        if (f !== srcFile) {
-            const p = parseFile(f, ParseFileMode.Exports, options);
-            if (p) {
-                files.push(p);
-            }
+        const p = parseFile(f, ParseFileMode.Exports, options);
+        if (p) {
+            files.push(p);
         }
     });
+
+    if (options.tilde === undefined) {
+        parseFile(srcFile, ParseFileMode.Exports, options); // only called to tilde
+    }
 
     fixFileNames(options, files);
     files.forEach((p: File) => {
