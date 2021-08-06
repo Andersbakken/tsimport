@@ -28,7 +28,7 @@ export default [
         output: {
             file: output,
             format,
-            name: "milo",
+            name: "tsimport",
             exports: "named",
             sourcemap: true
         }
