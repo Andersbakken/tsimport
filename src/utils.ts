@@ -153,7 +153,16 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
     assert(dir.endsWith("/"));
     let found = false;
     fs.readdirSync(dir, { withFileTypes: true }).forEach((f) => {
-        if (f.isFile()) {
+        let linked;
+        if (f.isSymbolicLink()) {
+            try {
+                linked = fs.statSync(fs.readlinkSync(path.join(dir, f.name)));
+                // console.log("got here", fs.readlinkSync(path.join(dir, f.name)));
+            } catch (err) {
+                /* */
+            }
+        }
+        if (f.isFile() || (linked && linked.isFile())) {
             if (f.name.endsWith(".ts")) {
                 // && !f.name.endsWith(".d.ts")) {
                 const file = path.resolve(path.join(dir, f.name));
@@ -164,7 +173,7 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
                 }
             }
         } else if (
-            f.isDirectory() &&
+            (f.isDirectory() || (linked && linked.isDirectory())) &&
             f.name !== "node_modules" &&
             f.name !== "tests" &&
             f.name !== "dist" &&
