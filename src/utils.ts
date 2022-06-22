@@ -117,7 +117,7 @@ export function loadConfig(options: Options, root: string): Options {
     try {
         const opts = JSON.parse(fs.readFileSync(path.join(root, "tsimport.json"), "utf8"));
         if (options.tilde === undefined && typeof opts.tilde === "boolean") {
-            options.tilde = opts.useTilde;
+            options.tilde = opts.tilde;
         }
         if (options["src-root"] === undefined && typeof opts["src-root"] === "string") {
             options["src-root"] = opts["src-root"];
@@ -136,6 +136,7 @@ export function loadConfig(options: Options, root: string): Options {
     if (!options["src-root"]) {
         options["src-root"] = root;
     }
+    options["src-root"] = fs.realpathSync(options["src-root"]);
     if (!options["src-root"].endsWith("/")) {
         options["src-root"] += "/";
     }

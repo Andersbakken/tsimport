@@ -53,8 +53,7 @@ if (!root) {
 const options: Options = loadConfig(
     {
         tilde: args.tilde,
-        explicitTilde: typeof args.tilde !== "undefined",
-        "src-root": args["src-root"] || root,
+        "src-root": args["src-root"],
         verbose: args.verbose || args.v,
         explicitSrcRoot: typeof args["src-root"] === "string",
         "in-place": args["in-place"] || args.i
