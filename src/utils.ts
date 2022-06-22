@@ -136,7 +136,14 @@ export function loadConfig(options: Options, root: string): Options {
     if (!options["src-root"]) {
         options["src-root"] = root;
     }
-    options["src-root"] = fs.realpathSync(options["src-root"]);
+    if (!options["src-root"].startsWith("/")) {
+        options["src-root"] = path.join(root, options["src-root"]);
+    }
+    try {
+        options["src-root"] = fs.realpathSync(options["src-root"]);
+    } catch (err) {
+        /* */
+    }
     if (!options["src-root"].endsWith("/")) {
         options["src-root"] += "/";
     }
