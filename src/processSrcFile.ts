@@ -255,7 +255,7 @@ export default function processSrcFile(
             }
             fs.writeFileSync(srcFile, newSrc);
         } catch (err) {
-            console.error("Failed to write changes", err.message);
+            console.error("Failed to write changes", (err as Error).message);
             process.exit(1);
         }
     } else {
