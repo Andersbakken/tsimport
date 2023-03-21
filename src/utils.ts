@@ -211,6 +211,9 @@ function map(path: string, srcRoot: string, cache: Map<string, string>): string 
         } else if (ret.endsWith(".ts")) {
             ret = ret.substring(0, ret.length - 3);
         }
+        if (ret.endsWith("/index")) {
+            ret = ret.substring(0, ret.length - 6);
+        }
         cache.set(path, ret);
     } else {
         ret = path;

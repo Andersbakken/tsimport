@@ -32,6 +32,11 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         return undefined;
     }
 
+    if (src.indexOf("tsimport-disable") !== -1) {
+        verbose("Skipping file for imports since it contains the phrase tsimport-disable");
+        return undefined;
+    }
+
     if (options.tilde === undefined && src.indexOf(' from "~/') !== -1) {
         options.tilde = true;
     }
