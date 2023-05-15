@@ -36,7 +36,7 @@
         "url": "git+https://github.com/Andersbakken/tsimport.git"
     },
     "author": "agbakken@gmail.com",
-    "license": "GPL",
+    "license": "ISC",
     "bugs": {
         "url": "https://github.com/Andersbakken/tsimport/issues"
     },

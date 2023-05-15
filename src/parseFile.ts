@@ -1,4 +1,12 @@
-import { forwardNonSpaces, forwardSpaces, forwardSymbol, isSymbol, verbose } from "~/utils";
+import {
+    backwardNonSpaces,
+    backwardSpaces,
+    forwardNonSpaces,
+    forwardSpaces,
+    forwardSymbol,
+    isSymbol,
+    verbose
+} from "~/utils";
 import Export from "~/Export";
 import File from "~/File";
 import Import from "~/Import";
@@ -17,6 +25,15 @@ function has(name: string, exports: Export[]): boolean {
         if (exp.name === name) {
             return true;
         }
+    }
+    return false;
+}
+
+function isIgnored(idx: number, src: string, file: string): boolean {
+    const end = backwardSpaces(idx - 1, src);
+    const start = backwardNonSpaces(end - 1, src);
+    if (end - start === 15 && src.substring(start + 1, end + 1) === "tsimport-ignore") {
+        return true;
     }
     return false;
 }
@@ -58,7 +75,8 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                 if (
                     mode & ParseFileMode.Exports &&
                     (idx === 0 || src[idx - 1] === "\n") &&
-                    src.substr(idx + 1, 6) === "xport "
+                    src.substr(idx + 1, 6) === "xport " &&
+                    !isIgnored(idx, src, filePath)
                 ) {
                     let i = forwardSpaces(idx + 6, src);
                     // const end = src.indexOf(" ",
