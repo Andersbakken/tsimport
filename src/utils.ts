@@ -44,6 +44,21 @@ export function forwardSpaces(idx: number, src: string): number {
     return idx;
 }
 
+export function backwardSpaces(idx: number, src: string): number {
+    while (idx >= 0) {
+        switch (src.charCodeAt(idx)) {
+            case 32:
+            case 10:
+            case 9:
+                break;
+            default:
+                return idx;
+        }
+        --idx;
+    }
+    return idx;
+}
+
 export function forwardNonSpaces(idx: number, src: string): number {
     while (idx < src.length) {
         switch (src.charCodeAt(idx)) {
@@ -55,6 +70,21 @@ export function forwardNonSpaces(idx: number, src: string): number {
                 break;
         }
         ++idx;
+    }
+    return idx;
+}
+
+export function backwardNonSpaces(idx: number, src: string): number {
+    while (idx >= 0) {
+        switch (src.charCodeAt(idx)) {
+            case 32:
+            case 10:
+            case 9:
+                return idx;
+            default:
+                break;
+        }
+        --idx;
     }
     return idx;
 }
