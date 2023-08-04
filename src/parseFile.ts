@@ -29,7 +29,7 @@ function has(name: string, exports: Export[]): boolean {
     return false;
 }
 
-function isIgnored(idx: number, src: string, file: string): boolean {
+function isIgnored(idx: number, src: string): boolean {
     const end = backwardSpaces(idx - 1, src);
     const start = backwardNonSpaces(end - 1, src);
     if (end - start === 15 && src.substring(start + 1, end + 1) === "tsimport-ignore") {
@@ -76,7 +76,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     mode & ParseFileMode.Exports &&
                     (idx === 0 || src[idx - 1] === "\n") &&
                     src.substr(idx + 1, 6) === "xport " &&
-                    !isIgnored(idx, src, filePath)
+                    !isIgnored(idx, src) //, filePath)
                 ) {
                     let i = forwardSpaces(idx + 6, src);
                     // const end = src.indexOf(" ",
