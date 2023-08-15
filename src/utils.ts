@@ -29,6 +29,21 @@ export function findPackageDotJsonDir(dir: string): string | undefined {
     return undefined;
 }
 
+export function findRootFromConfig(dir: string): string | undefined {
+    while (dir !== "/") {
+        try {
+            const file = path.join(dir, "tsimport.json");
+            if (fs.statSync(file).isFile()) {
+                return JSON.parse(fs.readFileSync(file, "utf8"))["src-root"] || dir;
+            }
+        } catch (err) {
+            /* */
+        }
+        dir = path.dirname(dir);
+    }
+    return undefined;
+}
+
 export function forwardSpaces(idx: number, src: string): number {
     while (idx < src.length) {
         switch (src.charCodeAt(idx)) {
@@ -142,8 +157,9 @@ export function findCommonRoot(strings: string[]): string {
     return strings[0].substr(0, shared);
 }
 
-let v = false;
+let v = process.argv.includes("--verbose") || process.argv.includes("-v");
 export function loadConfig(options: Options, root: string): Options {
+    verbose("loadConfig", root);
     try {
         const opts = JSON.parse(fs.readFileSync(path.join(root, "tsimport.json"), "utf8"));
         if (options.tilde === undefined && typeof opts.tilde === "boolean") {

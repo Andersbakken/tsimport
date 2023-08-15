@@ -1,4 +1,4 @@
-import { findCommonRoot, findPackageDotJsonDir, gather, loadConfig, usage, verbose } from "~/utils";
+import { findCommonRoot, findPackageDotJsonDir, findRootFromConfig, gather, loadConfig, usage, verbose } from "~/utils";
 import Options from "~/Options";
 import assert from "assert";
 import findUnused from "~/findUnused";
@@ -41,8 +41,9 @@ if (unused) {
         symbol = args._[1];
     }
     srcFile = path.resolve(args._[0]);
+    const srcFileDir = path.dirname(srcFile);
 
-    root = findPackageDotJsonDir(path.dirname(srcFile));
+    root = findRootFromConfig(srcFileDir) || findPackageDotJsonDir(srcFileDir);
 }
 
 if (!root) {
