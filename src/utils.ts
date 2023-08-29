@@ -115,6 +115,10 @@ export function isSymbol(idx: number, src: string): boolean {
     );
 }
 
+export function isValidSymbol(str: string): boolean {
+    return str.length > 0 && /^[A-Za-z_$][A-Za-z0-9_$]*$/.exec(str) !== null;
+}
+
 export function forwardSymbol(idx: number, src: string): number {
     while (idx < src.length) {
         const code = src.charCodeAt(idx);

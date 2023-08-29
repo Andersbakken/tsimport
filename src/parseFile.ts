@@ -5,6 +5,7 @@ import {
     forwardSpaces,
     forwardSymbol,
     isSymbol,
+    isValidSymbol,
     verbose
 } from "~/utils";
 import Export from "~/Export";
@@ -100,6 +101,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     let next;
                     let done = true;
                     let namedDefault = false;
+                    let lastThing = "";
                     do {
                         done = true;
                         if (isSymbol(i, src)) {
@@ -157,6 +159,10 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                 done = false;
                                 break;
                             default:
+                                if (!isValidSymbol(thing)) {
+                                    verbose(`${thing} is not a valid symbol name, discarding for ${lastThing}`);
+                                    break;
+                                }
                                 if (!def) {
                                     if (!file.namedExports) {
                                         file.namedExports = [];
@@ -169,13 +175,14 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                 } else if (namedDefault) {
                                     if (file.defaultExport && file.defaultExport.name !== thing) {
                                         verbose(
-                                            `Rewriting export name from "${file.defaultExport}" to "${thing}" for ${file.path}`
+                                            `Rewriting export name from "${file.defaultExport.name}" to "${thing}" for ${file.path}`
                                         );
                                         file.defaultExport.name = thing;
                                     }
                                 }
                                 break;
                         }
+                        lastThing = thing;
                     } while (!done);
                     idx = next;
                     // console.log("setting idx", idx);
