@@ -1,9 +1,9 @@
-import { ParseFileMode, parseFile } from "~/parseFile";
-import { fixFileNames, verbose } from "~/utils";
-import Export from "~/Export";
-import File from "~/File";
-import Import from "~/Import";
-import Options from "~/Options";
+import { ParseFileMode, parseFile } from "./parseFile";
+import { fixFileNames, verbose } from "./utils";
+import Export from "./Export";
+import File from "./File";
+import Import from "./Import";
+import Options from "./Options";
 
 export default function findUnused(options: Options, fileNames: string[]): boolean {
     verbose("findUnused called", options, fileNames);

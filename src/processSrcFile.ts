@@ -1,9 +1,9 @@
-import { ParseFileMode, parseFile } from "~/parseFile";
-import { findCommonRoot, fixFileNames, verbose } from "~/utils";
-import Export from "~/Export";
-import File from "~/File";
-import Import from "~/Import";
-import Options from "~/Options";
+import { ParseFileMode, parseFile } from "./parseFile";
+import { findCommonRoot, fixFileNames, verbose } from "./utils";
+import Export from "./Export";
+import File from "./File";
+import Import from "./Import";
+import Options from "./Options";
 import assert from "assert";
 import fs from "fs";
 import minimist from "minimist";

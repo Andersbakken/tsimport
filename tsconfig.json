@@ -14,9 +14,6 @@
         "sourceMap": true,
         "incremental": true,
         "lib": ["es6"],
-        "baseUrl": ".",
-        "paths": {
-            "~/*": ["src/*"]
-        }
+        "baseUrl": "."
     }
 }

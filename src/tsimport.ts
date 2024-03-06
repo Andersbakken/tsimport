@@ -1,10 +1,10 @@
-import { findCommonRoot, findPackageDotJsonDir, findRootFromConfig, gather, loadConfig, usage, verbose } from "~/utils";
-import Options from "~/Options";
+import { findCommonRoot, findPackageDotJsonDir, findRootFromConfig, gather, loadConfig, usage, verbose } from "./utils";
+import Options from "./Options";
 import assert from "assert";
-import findUnused from "~/findUnused";
+import findUnused from "./findUnused";
 import minimist from "minimist";
 import path from "path";
-import processSrcFile from "~/processSrcFile";
+import processSrcFile from "./processSrcFile";
 
 const args = minimist(process.argv.slice(2)); // , { boolean: ["v", "verbose", "find-unused-exports", "u"] });
 if (args.help) {

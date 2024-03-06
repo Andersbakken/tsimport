@@ -1,5 +1,5 @@
-import Export from "~/Export";
-import Import from "~/Import";
+import Export from "./Export";
+import Import from "./Import";
 
 export default class File {
     path: string;

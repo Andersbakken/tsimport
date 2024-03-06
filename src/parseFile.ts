@@ -7,11 +7,11 @@ import {
     isSymbol,
     isValidSymbol,
     verbose
-} from "~/utils";
-import Export from "~/Export";
-import File from "~/File";
-import Import from "~/Import";
-import Options from "~/Options";
+} from "./utils";
+import Export from "./Export";
+import File from "./File";
+import Import from "./Import";
+import Options from "./Options";
 import assert from "assert";
 import fs from "fs";
 import path from "path";
