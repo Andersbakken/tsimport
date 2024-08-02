@@ -233,11 +233,11 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
         } else if (
             (f.isDirectory() || (linked && linked.isDirectory())) &&
             f.name !== "node_modules" &&
-            f.name !== "tests" &&
+            (f.name !== "tests" || srcFile?.includes("/tests/")) &&
             f.name !== "dist" &&
             f.name !== ".git" &&
-            f.name !== "examples" &&
-            f.name !== "__tests__"
+            (f.name !== "examples" || srcFile?.includes("/examples/")) &&
+            (f.name !== "__tests__" || srcFile?.includes("/__tests__/"))
         ) {
             gather(path.join(dir, f.name) + "/", srcFile, dirs, files);
         }
