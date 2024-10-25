@@ -192,13 +192,14 @@ export default function processSrcFile(
     verbose("Found", symbol, "at", found);
     let insertPoint: number | undefined;
     let importModule: Import | undefined;
+    const fixedPath = fixPath(srcFile, found.path);
     if (parsed.imports) {
         for (let idx = 0; idx < parsed.imports.length; ++idx) {
-            verbose("comparing", parsed.imports[idx].path, found.path);
-            if (parsed.imports[idx].path === found.path) {
+            verbose("comparing", parsed.imports[idx].path, fixedPath);
+            if (parsed.imports[idx].path === fixedPath) {
                 importModule = parsed.imports[idx];
                 insertPoint = undefined;
-                // console.error("Already have it", parsed.imports[idx]);
+                verbose("Already have it", parsed.imports[idx]);
                 break;
             }
             insertPoint = parsed.sourceCode.indexOf("\n", parsed.imports[idx].end) + 1;
@@ -235,16 +236,14 @@ export default function processSrcFile(
         }
     } else if (found.default) {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${fixPath(
-            srcFile,
-            found.path
-        )}";\n${insertPoint === 0 ? "\n" : ""}${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${fixedPath}";\n${
+            insertPoint === 0 ? "\n" : ""
+        }${parsed.sourceCode.substr(insertPoint)}`;
     } else {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${fixPath(
-            srcFile,
-            found.path
-        )}";\n${insertPoint === 0 ? "\n" : ""}${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${fixedPath}";\n${
+            insertPoint === 0 ? "\n" : ""
+        }${parsed.sourceCode.substr(insertPoint)}`;
     }
 
     if (options["in-place"]) {
