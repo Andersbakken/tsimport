@@ -1,4 +1,13 @@
-import { findCommonRoot, findPackageDotJsonDir, findRootFromConfig, gather, loadConfig, usage, verbose } from "./utils";
+import {
+    findCommonRoot,
+    findPackageDotJsonDir,
+    findRootFromConfig,
+    findTSConfigDir,
+    gather,
+    loadConfig,
+    usage,
+    verbose
+} from "./utils";
 import Options from "./Options";
 import assert from "assert";
 import findUnused from "./findUnused";
@@ -43,7 +52,7 @@ if (unused) {
     srcFile = path.resolve(args._[0]);
     const srcFileDir = path.dirname(srcFile);
 
-    root = findRootFromConfig(srcFileDir) || findPackageDotJsonDir(srcFileDir);
+    root = findRootFromConfig(srcFileDir) || findTSConfigDir(srcFileDir) || findPackageDotJsonDir(srcFileDir);
 }
 
 if (!root) {

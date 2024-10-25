@@ -29,12 +29,33 @@ export function findPackageDotJsonDir(dir: string): string | undefined {
     return undefined;
 }
 
+export function findTSConfigDir(dir: string): string | undefined {
+    while (dir !== "/") {
+        try {
+            if (fs.statSync(path.join(dir, "tsconfig.json")).isFile()) {
+                return dir;
+            }
+        } catch (err) {
+            /* */
+        }
+        dir = path.dirname(dir);
+    }
+    return undefined;
+}
+
 export function findRootFromConfig(dir: string): string | undefined {
     while (dir !== "/") {
         try {
             const file = path.join(dir, "tsimport.json");
             if (fs.statSync(file).isFile()) {
-                return JSON.parse(fs.readFileSync(file, "utf8"))["src-root"] || dir;
+                const srcRoot = JSON.parse(fs.readFileSync(file, "utf8"))["src-root"];
+                if (srcRoot) {
+                    if (!srcRoot.startsWith("/")) {
+                        return path.join(dir, srcRoot);
+                    }
+                    return srcRoot;
+                }
+                return dir;
             }
         } catch (err) {
             /* */
