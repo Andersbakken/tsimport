@@ -1,5 +1,5 @@
 import { ParseFileMode, parseFile } from "./parseFile";
-import { fixFileNames, verbose } from "./utils";
+import { verbose } from "./utils";
 import Export from "./Export";
 import File from "./File";
 import Import from "./Import";
@@ -17,7 +17,6 @@ export default function findUnused(options: Options, fileNames: string[]): boole
             files.push(p);
         }
     });
-    fixFileNames(options, files);
     files.forEach((p: File) => {
         if (p.namedExports) {
             p.namedExports.forEach((exp: Export) => {

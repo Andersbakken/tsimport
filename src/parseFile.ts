@@ -55,10 +55,6 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
         return undefined;
     }
 
-    if (options.tilde === undefined && src.indexOf(' from "~/') !== -1) {
-        options.tilde = true;
-    }
-
     const file = new File(filePath, src);
 
     let commentStart = undefined;
@@ -207,9 +203,6 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
 
                     const fileName = src.substring(quoteStart + 1, quoteEnd);
                     const end = src[quoteEnd + 1] === ";" ? quoteEnd + 1 : quoteEnd;
-                    if (options.tilde === undefined && fileName.lastIndexOf("~/", 0) === 0) {
-                        options.tilde = true;
-                    }
                     const imp = new Import(fileName, idx, end);
                     if (!file.imports) {
                         file.imports = [];

@@ -1,6 +1,3 @@
-import Export from "./Export";
-import File from "./File";
-import Import from "./Import";
 import Options from "./Options";
 import assert from "assert";
 import fs from "fs";
@@ -10,7 +7,7 @@ type Printer = (...args: unknown[]) => void;
 
 export function usage(print: Printer): void {
     print(`Usage:
-tsimport [/path/to/file] [symbol] [--src-root <root>] [--use-tilde] [--verbose|-v] [--inplace|-i <backupsuffix>]
+tsimport [/path/to/file] [symbol] [--src-root <root>] [--verbose|-v] [--inplace|-i <backupsuffix>]
 tsimport [/path/to/file-or-directory] --complete [sym]
 tsimport [/path/to/file-or-directory] --find-unused-exports|-u`);
 }
@@ -187,9 +184,6 @@ export function loadConfig(options: Options, root: string): Options {
     verbose("loadConfig", root);
     try {
         const opts = JSON.parse(fs.readFileSync(path.join(root, "tsimport.json"), "utf8"));
-        if (options.tilde === undefined && typeof opts.tilde === "boolean") {
-            options.tilde = opts.tilde;
-        }
         if (options["src-root"] === undefined && typeof opts["src-root"] === "string") {
             options["src-root"] = opts["src-root"];
             options.explicitSrcRoot = true;
@@ -266,52 +260,5 @@ export function gather(dir: string, srcFile: string | undefined, dirs: string[],
     });
     if (found) {
         dirs.push(dir);
-    }
-}
-
-function map(path: string, srcRoot: string, cache: Map<string, string>): string {
-    let ret = cache.get(path);
-    if (ret) {
-        return ret;
-    }
-
-    if (path.startsWith(srcRoot)) {
-        ret = `~/${path.substring(srcRoot.length)}`;
-        if (ret.endsWith(".d.ts")) {
-            ret = ret.substring(0, ret.length - 5);
-        } else if (ret.endsWith(".ts")) {
-            ret = ret.substring(0, ret.length - 3);
-        }
-        if (ret.endsWith("/index")) {
-            ret = ret.substring(0, ret.length - 6);
-        }
-        cache.set(path, ret);
-    } else {
-        ret = path;
-    }
-    return ret;
-}
-
-export function fixFileNames(options: Options, files: File[]): void {
-    if (options.tilde) {
-        const srcRoot = options["src-root"];
-        assert(srcRoot);
-        const cache: Map<string, string> = new Map<string, string>();
-        files.forEach((file: File) => {
-            file.path = map(file.path, srcRoot, cache);
-            if (file.imports) {
-                file.imports.forEach((imp: Import) => {
-                    imp.path = map(imp.path, srcRoot, cache);
-                });
-            }
-            if (file.defaultExport) {
-                file.defaultExport.path = map(file.defaultExport.path, srcRoot, cache);
-            }
-            if (file.namedExports) {
-                file.namedExports.forEach((exp: Export) => {
-                    exp.path = map(exp.path, srcRoot, cache);
-                });
-            }
-        });
     }
 }

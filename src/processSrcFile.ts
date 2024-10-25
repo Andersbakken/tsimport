@@ -1,5 +1,5 @@
 import { ParseFileMode, parseFile } from "./parseFile";
-import { findCommonRoot, fixFileNames, verbose } from "./utils";
+import { findCommonRoot, verbose } from "./utils";
 import Export from "./Export";
 import File from "./File";
 import Import from "./Import";
@@ -19,7 +19,7 @@ function addExport(allExports: Map<string, Export[]>, exp: Export): void {
     }
 }
 
-function processFiles(fileNames: string[], options: Options, srcFile: string): Map<string, Export[]> {
+function processFiles(fileNames: string[], options: Options): Map<string, Export[]> {
     const allExports = new Map<string, Export[]>();
     // console.log(parsed);
     const files: File[] = [];
@@ -30,11 +30,6 @@ function processFiles(fileNames: string[], options: Options, srcFile: string): M
         }
     });
 
-    if (options.tilde === undefined) {
-        parseFile(srcFile, ParseFileMode.Exports, options); // only called to tilde
-    }
-
-    fixFileNames(options, files);
     files.forEach((p: File) => {
         // console.log(file)
         if (p.defaultExport) {
@@ -61,10 +56,12 @@ function fixPath(srcFile: string, importPath: string): string {
         relative = "./" + relative;
     }
     if (relative.endsWith(".d.ts")) {
-        return relative.substr(0, relative.length - 5);
+        relative = relative.substring(0, relative.length - 5);
+    } else if (relative.endsWith(".ts")) {
+        relative = relative.substring(0, relative.length - 3);
     }
-    if (relative.endsWith(".ts")) {
-        return relative.substr(0, relative.length - 3);
+    if (relative.endsWith("/index")) {
+        relative = relative.substring(0, relative.length - 6);
     }
     return relative;
 }
@@ -76,11 +73,8 @@ export default function processSrcFile(
     symbol: string | undefined,
     files: string[]
 ): void {
-    const allExports = processFiles(files, options, srcFile);
+    const allExports = processFiles(files, options);
     const parsed = parseFile(srcFile, ParseFileMode.Imports, options);
-    if (parsed) {
-        fixFileNames(options, [parsed]);
-    }
     if (args.complete !== undefined) {
         let keys = Array.from(allExports.keys());
         if (parsed && parsed.imports) {
