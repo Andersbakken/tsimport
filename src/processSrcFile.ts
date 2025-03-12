@@ -185,6 +185,8 @@ export default function processSrcFile(
     assert(found);
     verbose("Found", symbol, "at", found);
     let insertPoint: number | undefined;
+    let prefix = "";
+    let suffix = "";
     let importModule: Import | undefined;
     const fixedPath = fixPath(srcFile, found.path);
     if (parsed.imports) {
@@ -199,7 +201,19 @@ export default function processSrcFile(
             insertPoint = parsed.sourceCode.indexOf("\n", parsed.imports[idx].end) + 1;
         }
     } else {
-        insertPoint = 0;
+        insertPoint = parsed.sourceCode.lastIndexOf("/// <reference path=");
+        if (insertPoint === -1) {
+            insertPoint = 0;
+            if (parsed.sourceCode.startsWith("/*")) {
+                insertPoint = parsed.sourceCode.indexOf("*/") + 3;
+                prefix = "\n";
+                suffix = "\n";
+            } else if (parsed.sourceCode.startsWith("//")) {
+                insertPoint = parsed.sourceCode.indexOf("\n") + 1;
+                prefix = "\n";
+                suffix = "\n";
+            }
+        }
     }
 
     let newSrc: string;
@@ -230,14 +244,16 @@ export default function processSrcFile(
         }
     } else if (found.default) {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import ${symbol} from "${fixedPath}";\n${
-            insertPoint === 0 ? "\n" : ""
-        }${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(
+            0,
+            insertPoint
+        )}${prefix}import ${symbol} from "${fixedPath}";\n${suffix}${parsed.sourceCode.substr(insertPoint)}`;
     } else {
         assert(insertPoint !== undefined);
-        newSrc = `${parsed.sourceCode.substr(0, insertPoint)}import { ${symbol} } from "${fixedPath}";\n${
-            insertPoint === 0 ? "\n" : ""
-        }${parsed.sourceCode.substr(insertPoint)}`;
+        newSrc = `${parsed.sourceCode.substr(
+            0,
+            insertPoint
+        )}${prefix}import { ${symbol} } from "${fixedPath}";\n${suffix}${parsed.sourceCode.substr(insertPoint)}`;
     }
 
     if (options["in-place"]) {
