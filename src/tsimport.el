@@ -1,4 +1,5 @@
 (require 'thingatpt)
+(require 'subr-x)
 
 (defvar tsimport-command "tsimport")
 (defun tsimport (&optional symbol)
@@ -7,7 +8,7 @@
     (error "You should not run this on an unsaved buffer"))
   (unless symbol
     (let ((default (thing-at-point 'symbol))
-          (alternatives (split-string (shell-command-to-string (format "%s %s --complete" tsimport-command (buffer-file-name))))))
+          (alternatives (split-string (shell-command-to-string (format "%s %s --complete 2>/dev/null" tsimport-command (shell-quote-argument (buffer-file-name)))))))
       (when (and default (not (member default alternatives)))
         (setq default nil))
       (setq symbol (completing-read (if default (format "Symbol (default %s): " default) "Symbol: ") alternatives nil t nil nil default))
@@ -16,15 +17,30 @@
           (error "No default"))
         (setq symbol default))))
   (let ((buffer (current-buffer))
-        (replacement))
-    (with-temp-buffer
-      (if (= (call-process tsimport-command nil t nil (buffer-file-name buffer) symbol) 0)
+        (stderr-file (make-temp-file "tsimport-stderr"))
+        (replacement)
+        (status)
+        (errors))
+    ;; keep stderr separate so diagnostics like "Already have it" never end up
+    ;; in the buffer
+    (unwind-protect
+        (with-temp-buffer
+          (setq status (call-process tsimport-command nil (list t stderr-file) nil (buffer-file-name buffer) symbol))
           (setq replacement (buffer-substring-no-properties (point-min) (point-max)))
-        (error "Something happened:\n%s" (buffer-substring-no-properties (point-min) (point-max)))))
-    (bookmark-set "tsimport")
-    (erase-buffer)
-    (insert replacement)
-    (bookmark-jump "tsimport")))
+          (setq errors (with-temp-buffer
+                         (insert-file-contents stderr-file)
+                         (string-trim (buffer-string)))))
+      (delete-file stderr-file))
+    (unless (eq status 0)
+      (error "tsimport failed:\n%s" (if (string-empty-p errors) replacement errors)))
+    (if (string= replacement (buffer-substring-no-properties (point-min) (point-max)))
+        (message "%s" (if (string-empty-p errors) "tsimport: nothing to do" errors))
+      (bookmark-set "tsimport")
+      (erase-buffer)
+      (insert replacement)
+      (bookmark-jump "tsimport")
+      (unless (string-empty-p errors)
+        (message "%s" errors)))))
 ;; (message "symbol %s" symbol))
 
 (defun tsimport-find-unused ()

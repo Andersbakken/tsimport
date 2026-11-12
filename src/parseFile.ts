@@ -119,7 +119,16 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                         .split(/, */)
                                         .forEach((x) => {
                                             assert(file.namedExports);
-                                            const trimmed = x.trim();
+                                            // export { type Foo, Bar as Baz } => Foo, Baz
+                                            let trimmed = x.trim().replace(/^type\s+/, "");
+                                            const asMatch = /\s+as\s+/.exec(trimmed);
+                                            if (asMatch) {
+                                                trimmed = trimmed.substring(asMatch.index + asMatch[0].length);
+                                            }
+                                            trimmed = trimmed.trim();
+                                            if (!trimmed || trimmed === "default") {
+                                                return;
+                                            }
                                             if (!has(trimmed, file.namedExports)) {
                                                 file.namedExports.push(new Export(trimmed, filePath, line));
                                                 verbose(`Adding named export ${trimmed} for ${filePath}:${line}`);
@@ -223,24 +232,51 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
 
                     // import
                     let imports = src.substring(idx + 7, from).trim();
-                    if (imports[0] === "{") {
-                        if (imports[imports.length - 1] !== "}") {
+                    // import type Foo from "..." / import type { Foo } from "..."
+                    const typeMatch = /^type\s+/.exec(imports);
+                    if (typeMatch) {
+                        imp.typeOnly = true;
+                        imports = imports.substring(typeMatch[0].length);
+                    }
+                    // import Foo, { Bar } from "..."
+                    const braceIdx = imports.indexOf("{");
+                    let namedPart: string | undefined;
+                    if (braceIdx !== -1) {
+                        namedPart = imports.substring(braceIdx).trim();
+                        imports = imports.substring(0, braceIdx).trim();
+                        if (imports.endsWith(",")) {
+                            imports = imports.substring(0, imports.length - 1).trim();
+                        }
+                        if (namedPart[namedPart.length - 1] !== "}") {
                             idx = quoteEnd;
                             continue;
                         }
-                        imp.named = imports
-                            .substring(1, imports.length - 2)
+                    }
+                    if (namedPart) {
+                        imp.specifiers = namedPart
+                            .substring(1, namedPart.length - 1)
                             .split(",")
-                            .map((x) => {
-                                const asIdx = x.indexOf(" as ");
-                                if (asIdx !== -1) {
-                                    x = x.substring(0, asIdx);
+                            .map((x) => x.trim())
+                            .filter((x) => x)
+                            .map((text) => {
+                                let name = text;
+                                let isType = false;
+                                const inlineType = /^type\s+/.exec(name);
+                                if (inlineType) {
+                                    isType = true;
+                                    name = name.substring(inlineType[0].length);
                                 }
-                                return x.trim();
+                                const asMatch = /\s+as\s+/.exec(name);
+                                if (asMatch) {
+                                    name = name.substring(0, asMatch.index);
+                                }
+                                return { name: name.trim(), text, isType };
                             });
+                        imp.named = imp.specifiers.map((x) => x.name);
                         verbose(`Adding named imports: ${imp.named} for ${filePath} from ${fileName}`);
                         // console.log(importArray);
-                    } else {
+                    }
+                    if (imports) {
                         const asIdx = imports.indexOf(" as ");
                         if (asIdx !== -1) {
                             imports = imports.substring(0, asIdx);

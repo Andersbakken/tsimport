@@ -4,72 +4,164 @@ import Export from "./Export";
 import File from "./File";
 import Import from "./Import";
 import Options from "./Options";
+import assert from "assert";
+import path from "path";
+
+// Turn a file path or a resolved import path into a key that both sides
+// agree on: absolute, no extension, no trailing /index
+function moduleKey(p: string): string {
+    p = p.replace(/\.d\.ts$/, "").replace(/\.(ts|tsx|js|jsx|mjs|cjs)$/, "");
+    if (p.endsWith("/index")) {
+        p = p.substring(0, p.length - 6);
+    }
+    return p;
+}
+
+// Resolve the module specifier of an import relative to the importing file,
+// returns undefined for things like packages that we can't map to a file.
+function resolveImport(fromFile: string, specifier: string, srcRoot: string): string | undefined {
+    if (specifier === "." || specifier === ".." || specifier.startsWith("./") || specifier.startsWith("../")) {
+        return moduleKey(path.resolve(path.dirname(fromFile), specifier));
+    }
+    if (specifier.startsWith("~/")) {
+        return moduleKey(path.resolve(srcRoot, specifier.substring(2)));
+    }
+    return undefined;
+}
+
+interface Usage {
+    module: string;
+    // undefined means everything (import * as foo / export * from)
+    names?: string[];
+    default: boolean;
+}
+
+function importUsage(file: File, imp: Import, srcRoot: string): Usage | undefined {
+    const module = resolveImport(file.path, imp.path, srcRoot);
+    if (!module) {
+        return undefined;
+    }
+    if (imp.default === "*") {
+        return { module, default: true };
+    }
+    const names = imp.named.filter((n: string) => n !== "default");
+    return { module, names, default: Boolean(imp.default) || names.length !== imp.named.length };
+}
+
+// export * from "./foo";  export { a, b as c } from "./foo";
+function reExportUsages(file: File, srcRoot: string): Usage[] {
+    const ret: Usage[] = [];
+    const rx = /^export\s+(?:type\s+)?(\*(?:\s+as\s+\w+)?|\{[^}]*\})\s*from\s*["']([^"']+)["']/gm;
+    let match;
+    while ((match = rx.exec(file.sourceCode))) {
+        const module = resolveImport(file.path, match[2], srcRoot);
+        if (!module) {
+            continue;
+        }
+        if (match[1][0] === "*") {
+            // export * doesn't re-export the default, export * as ns does
+            ret.push({ module, default: match[1] !== "*" });
+            continue;
+        }
+        const names = match[1]
+            .substring(1, match[1].length - 1)
+            .split(",")
+            .map((x: string) =>
+                x
+                    .trim()
+                    .replace(/^type\s+/, "")
+                    .replace(/\s+as\s+.*$/, "")
+            )
+            .filter((x: string) => x);
+        const named = names.filter((n: string) => n !== "default");
+        ret.push({ module, names: named, default: named.length !== names.length });
+    }
+    return ret;
+}
 
 export default function findUnused(options: Options, fileNames: string[]): boolean {
     verbose("findUnused called", options, fileNames);
-    // console.log(parsed);
-    const exports = new Map<string, Export>();
-    const imports: Import[] = [];
-    const files: File[] = [];
+    const srcRoot = options["src-root"];
+    assert(srcRoot);
+    // module key -> name (or "default") -> export
+    const exports = new Map<string, Map<string, Export>>();
+    const usages: Usage[] = [];
     fileNames.forEach((f: string) => {
         const p: File | undefined = parseFile(f, ParseFileMode.Imports | ParseFileMode.Exports, options);
-        if (p) {
-            files.push(p);
+        if (!p) {
+            return;
         }
-    });
-    files.forEach((p: File) => {
+        const key = moduleKey(p.path);
+        let fileExports = exports.get(key);
+        if (!fileExports) {
+            fileExports = new Map<string, Export>();
+            exports.set(key, fileExports);
+        }
         if (p.namedExports) {
-            p.namedExports.forEach((exp: Export) => {
-                exports.set(`${exp.path}:${exp.name}`, exp);
-                verbose(`Adding named ${exp.path}:${exp.name}`);
-            });
+            for (const exp of p.namedExports) {
+                fileExports.set(exp.name, exp);
+                verbose(`Adding named ${key}:${exp.name}`);
+            }
         }
         if (p.defaultExport) {
-            exports.set(`${p.path}:${p.defaultExport.name}:d`, p.defaultExport);
-            verbose(`Adding default ${p.path}:${p.defaultExport}:d`);
+            fileExports.set("default", p.defaultExport);
+            verbose(`Adding default ${key}:${p.defaultExport.name}`);
         }
 
         if (p.imports) {
-            imports.push(...p.imports);
-        }
-    });
-    // console.log(exports, imports);
-    imports.forEach((imp: Import) => {
-        imp.named.forEach((name: string) => {
-            const removed = exports.delete(`${imp.path}:${name}`);
-            verbose(`Removing named ${imp.path}:${name} -> ${removed}`);
-        });
-        if (imp.default) {
-            if (imp.default === "*") {
-                for (const [key] of exports) {
-                    const file = key.substring(0, key.indexOf(":"));
-                    if (file === imp.path) {
-                        verbose(`Removing default * import ${key}`);
-                        exports.delete(key);
-                    }
+            for (const imp of p.imports) {
+                const usage = importUsage(p, imp, srcRoot);
+                if (usage) {
+                    usages.push(usage);
                 }
-            } else {
-                const removed = exports.delete(`${imp.path}:${imp.default}:d`);
-                verbose(`Removing default ${imp.path}:${imp.default}:d -> ${removed}`);
             }
         }
+        usages.push(...reExportUsages(p, srcRoot));
     });
 
-    if (!exports.size) {
+    for (const usage of usages) {
+        const fileExports = exports.get(usage.module);
+        if (!fileExports) {
+            verbose(`No exports known for ${usage.module}`);
+            continue;
+        }
+        if (!usage.names) {
+            // import * as foo from "./foo" uses everything, export * from
+            // "./foo" uses everything but the default
+            verbose(`Removing all exports from ${usage.module}`);
+            const def = usage.default ? undefined : fileExports.get("default");
+            fileExports.clear();
+            if (def) {
+                fileExports.set("default", def);
+            }
+            continue;
+        }
+        for (const name of usage.names) {
+            const removed = fileExports.delete(name);
+            verbose(`Removing named ${usage.module}:${name} -> ${removed}`);
+        }
+        if (usage.default) {
+            const removed = fileExports.delete("default");
+            verbose(`Removing default ${usage.module} -> ${removed}`);
+        }
+    }
+
+    const unused: Export[] = [];
+    for (const fileExports of exports.values()) {
+        unused.push(...fileExports.values());
+    }
+
+    if (!unused.length) {
         console.log("Didn't find any unimported exports");
         return false;
     }
-    for (const [key, value] of exports) {
-        const split = key.split(":");
-        let path = split[0];
-        if (path.startsWith("~/")) {
-            path = options["src-root"] + path.substr(2);
-        }
-        // console.log(key, split);
+    unused.sort((a: Export, b: Export) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.line - b.line));
+    for (const exp of unused) {
         console.log(
-            `${path}.ts:${value.line}: warning: ${split[2] ? "Default" : "Named"} export ${split[1]} is never imported`
+            `${exp.path}:${exp.line}: warning: ${exp.default ? "Default" : "Named"} export ${
+                exp.name
+            } is never imported`
         );
-        // console.log(`${split[2] ? "Default" : "Named"} export "${split[1]}" from ${split[0]} is never imported`);
     }
     return true;
 }
