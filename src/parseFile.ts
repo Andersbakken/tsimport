@@ -21,6 +21,20 @@ export const enum ParseFileMode {
     Exports = 0x2
 }
 
+// keywords that are followed by the name of the thing being exported
+const declarators = new Set<string>([
+    "const",
+    "let",
+    "var",
+    "function",
+    "class",
+    "interface",
+    "type",
+    "enum",
+    "namespace",
+    "module"
+]);
+
 function has(name: string, exports: Export[]): boolean {
     for (const exp of exports) {
         if (exp.name === name) {
@@ -102,12 +116,23 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                         done = true;
                         if (isSymbol(i, src)) {
                             next = forwardSymbol(i, src);
+                        } else if (src[i] === "*") {
+                            // function*gen
+                            next = i + 1;
                         } else {
                             next = forwardNonSpaces(i, src);
                         }
                         const thing = src.substring(i, next);
                         // console.log(thing);
-                        switch (thing) {
+                        // After a declarator any identifier is the name, even
+                        // if it looks like a keyword: export const module = 1;
+                        const keyword =
+                            declarators.has(lastThing) &&
+                            isValidSymbol(thing) &&
+                            !(lastThing === "const" && thing === "enum")
+                                ? ""
+                                : thing;
+                        switch (keyword) {
                             case "{":
                                 if (!def) {
                                     // need to parse the list of named exports
@@ -149,14 +174,27 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                                 idx = next;
                                 continue;
                             // process.exit(1);
+                            case "*":
+                                // export function* gen() {}
+                                if (lastThing !== "function") {
+                                    break;
+                                }
+                                i = forwardSpaces(next, src);
+                                done = false;
+                                break;
                             case "enum":
                             case "type":
                             case "function":
                             case "interface":
                             case "class":
+                            case "namespace":
+                            case "module":
                                 // for these cases we have a better idea of the desired name of the export so we let them override
                                 namedDefault = true;
                             case "const":
+                            case "let":
+                            case "var":
+                            case "declare":
                             case "abstract":
                             case "default":
                             case "async":
