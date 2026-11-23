@@ -81,6 +81,20 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
     let line = 1;
     while (idx < src.length) {
         // console.log("looking at", idx, src.length);
+        if (commentStart !== undefined) {
+            // Inside a block comment, skip everything (quotes, export
+            // keywords etc) until the closing */
+            let end = src.indexOf("*/", idx);
+            end = end === -1 ? src.length : end + 2;
+            for (let i = idx; i < end; ++i) {
+                if (src[i] === "\n") {
+                    ++line;
+                }
+            }
+            commentStart = undefined;
+            idx = end;
+            continue;
+        }
         switch (src[idx]) {
             case "e":
                 if (
@@ -347,6 +361,7 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                     } else if (ch === "*") {
                         commentStart = idx;
                         idx += 2;
+                        continue;
                     }
                 }
                 break;
@@ -372,11 +387,6 @@ export function parseFile(filePath: string, mode: ParseFileMode, options: Option
                 }
                 break;
             }
-            case "*":
-                if (commentStart !== undefined && src[idx + 1] === "/") {
-                    commentStart = undefined;
-                }
-                break;
             case "\n":
                 ++line;
                 break;
